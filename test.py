@@ -18,7 +18,7 @@ def parse_args():
                         help="Path to the saved model checkpoint .pth file")
     parser.add_argument("--root_dir", type=str, default="./datasets/threed_front_diningroom",
                         help="Root directory for test dataset")
-    parser.add_argument("--batch_size", type=int, default=2,
+    parser.add_argument("--batch_size", type=int, default=1,
                         help="Batch size for test dataloader")
     parser.add_argument("--save_dir", type=str, default="./test_results",
                         help="Directory to save visualization images")
