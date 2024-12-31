@@ -141,7 +141,8 @@ def main(args):
     accelerator.wait_for_everyone()
 
     if accelerator.is_main_process:
-        wandb.init(project="3Dfront-LLM", config=config, name="train_3dfront_run")
+        wandb.login(key='0f272b4978c0b450c3765b24b8abd024d7799e80')
+        wandb.init(project="3Dfront-LLM", config=config, name="train_3dfront_run", save_code=True)
         wandb.watch(model, log="all")
     # ---------------------------------------------------------------
 
