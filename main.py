@@ -37,7 +37,7 @@ def parse_args():
 
     parser.add_argument("--root_dir", type=str, default="./datasets/threed_front_diningroom",
                         help="Dataset root directory")
-    parser.add_argument("--num_epochs", type=int, default=10,
+    parser.add_argument("--num_epochs", type=int, default=1000,
                         help="Number of training epochs")
     parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate")
