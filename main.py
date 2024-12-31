@@ -144,15 +144,18 @@ def main(args):
         wandb.login(key='0f272b4978c0b450c3765b24b8abd024d7799e80')
         wandb.init(project="3Dfront-LLM", config=config, name="train_3dfront_run", save_code=True)
         wandb.watch(model, log="all")
-    # ---------------------------------------------------------------
 
     # 9. 학습
     num_epochs = config["num_epochs"]
+
     for epoch in range(num_epochs):
         # == Training ==
         model.train()
         train_loss_sum = 0.0
-        for layout, image in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]"):
+        train_steps = 0  # 평균을 내기 위해 step(배치) 수 카운트
+
+        for layout, image in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]",
+                                  disable=not accelerator.is_main_process):
             layout = layout.to(device)
             image = image.to(device)
 
@@ -164,28 +167,45 @@ def main(args):
             accelerator.backward(loss)
             optimizer.step()
 
-            train_loss_sum += loss.item()
+            with torch.no_grad():
+                # loss 는 shape=() 인 스칼라 텐서
+                # gather 하면 모든 프로세스의 loss 값이 (world_size,) 텐서로 모임
+                gathered_loss = accelerator.gather(loss.detach())
+                mean_loss = gathered_loss.mean().item()
 
-        train_loss_avg = train_loss_sum / len(train_dataloader)
+            train_loss_sum += mean_loss
+            train_steps += 1
+
+        # 모든 프로세스에서 loop가 끝난 뒤, 최종 평균(loss) 계산
+        train_loss_avg = train_loss_sum / train_steps if train_steps > 0 else 0.0
 
         # == Validation ==
         model.eval()
         val_loss_sum = 0.0
+        val_steps = 0
+
         with torch.no_grad():
-            for layout, image in tqdm(val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]"):
+            for layout, image in tqdm(val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]",
+                                      disable=not accelerator.is_main_process):
                 layout = layout.to(device)
                 image = image.to(device)
 
                 output = model(image)
                 loss = criterion(output, layout)
-                val_loss_sum += loss.item()
-        val_loss_avg = val_loss_sum / len(val_dataloader)
 
-        # Epoch 결과 출력
-        print(f"[Epoch {epoch + 1}/{num_epochs}] Train Loss: {train_loss_avg:.4f} | Val Loss: {val_loss_avg:.4f}")
+                # 각 프로세스별 loss를 gather 후 평균
+                gathered_loss = accelerator.gather(loss.detach())
+                mean_loss = gathered_loss.mean().item()
 
-        # -- wandb 로깅 (메인 프로세스에서만) --
+                val_loss_sum += mean_loss
+                val_steps += 1
+
+        val_loss_avg = val_loss_sum / val_steps if val_steps > 0 else 0.0
+
         if accelerator.is_main_process:
+            print(f"[Epoch {epoch + 1}/{num_epochs}] Train Loss: {train_loss_avg:.4f} | Val Loss: {val_loss_avg:.4f}")
+
+            # -- wandb 로깅 --
             wandb.log({
                 "train_loss": train_loss_avg,
                 "val_loss": val_loss_avg,
