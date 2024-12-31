@@ -6,6 +6,8 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 import matplotlib.pyplot as plt
+from shapely.geometry import Polygon
+from shapely.affinity import rotate, translate
 
 # models/ 폴더에 있는 모듈들 임포트
 from models.LLM import Model
@@ -44,12 +46,72 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
     fig, axes = plt.subplots(1, 2, figsize=(8, 4))
 
     # 원본 layout
-    axes[0].imshow(gt_layout, aspect='auto', cmap='viridis')
+    for element in gt_layout:
+        pos = element[:3]
+        size = element[3:6]
+        rot = element[6:7]
+        category = element[7:]
+
+        width, height, depth = size[0] * 2, size[1] * 2, size[2] * 2  # 원본 코드처럼 *2
+        dx, dy, dz = pos
+
+        # Shapely를 사용하여 2D Polygon(Top-View) 구성
+        # (width, depth) 기준으로 XY plane 대신 XZ plane을 사용하므로,
+        # Polygon의 y좌표 자리에 depth를 넣어서 "바닥에서 본 형태"를 그립니다.
+        base_rect = Polygon([
+            (-width / 2, -depth / 2),
+            (width / 2, -depth / 2),
+            (width / 2, depth / 2),
+            (-width / 2, depth / 2)
+        ])
+
+        # 회전은 라디안 단위로, base_rect를 중심에서 angle[0]만큼 회전 (Y축 기준 회전 가정)
+        # Shapely rotate 함수는 기본적으로 origin='center'일 때,
+        # polygon의 centroid를 기준으로 회전합니다. (origin 파라미터로 조절 가능)
+        rect_rotated = rotate(base_rect, rot[0], use_radians=True)
+
+        # X방향으로 dx, Y방향(실제로는 Z축)을 위해 dz를 사용해 평행이동
+        rect_translated = translate(rect_rotated, xoff=dx, yoff=dz)
+
+        # 폴리곤 시각화
+        x_coords, y_coords = rect_translated.exterior.xy
+        axes[0].fill(x_coords, y_coords, alpha=0.4)
+
     axes[0].set_title("GT Layout")
     axes[0].axis("off")
 
     # 모델 output layout
-    axes[1].imshow(pred_layout, aspect='auto', cmap='viridis')
+    # 원본 layout
+    for element in pred_layout:
+        pos = element[:3]
+        size = element[3:6]
+        rot = element[6:7]
+        category = element[7:]
+
+        width, height, depth = size[0] * 2, size[1] * 2, size[2] * 2  # 원본 코드처럼 *2
+        dx, dy, dz = pos
+
+        # Shapely를 사용하여 2D Polygon(Top-View) 구성
+        # (width, depth) 기준으로 XY plane 대신 XZ plane을 사용하므로,
+        # Polygon의 y좌표 자리에 depth를 넣어서 "바닥에서 본 형태"를 그립니다.
+        base_rect = Polygon([
+            (-width / 2, -depth / 2),
+            (width / 2, -depth / 2),
+            (width / 2, depth / 2),
+            (-width / 2, depth / 2)
+        ])
+
+        # 회전은 라디안 단위로, base_rect를 중심에서 angle[0]만큼 회전 (Y축 기준 회전 가정)
+        # Shapely rotate 함수는 기본적으로 origin='center'일 때,
+        # polygon의 centroid를 기준으로 회전합니다. (origin 파라미터로 조절 가능)
+        rect_rotated = rotate(base_rect, rot[0], use_radians=True)
+
+        # X방향으로 dx, Y방향(실제로는 Z축)을 위해 dz를 사용해 평행이동
+        rect_translated = translate(rect_rotated, xoff=dx, yoff=dz)
+
+        # 폴리곤 시각화
+        x_coords, y_coords = rect_translated.exterior.xy
+        axes[1].fill(x_coords, y_coords, alpha=0.4)
     axes[1].set_title("Predicted Layout")
     axes[1].axis("off")
 
