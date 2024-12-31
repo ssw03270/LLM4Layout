@@ -1,7 +1,12 @@
+import wandb
+
 import argparse
 import random
 import numpy as np
 from tqdm import tqdm
+import os
+import json
+from datetime import datetime
 
 import torch
 from torch.utils.data import DataLoader
@@ -123,13 +128,30 @@ def main(args):
     # 8. Loss 정의
     criterion = nn.MSELoss()
 
+    run_dir = None  # 분산 환경에서 프로세스마다 변수를 공유하기 위해 선언
+    if accelerator.is_main_process:
+        now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_dir = f"run_{now_str}"
+        os.makedirs(run_dir, exist_ok=True)
+
+        # config.json 저장
+        with open(os.path.join(run_dir, "config.json"), "w") as f:
+            json.dump(config, f, indent=4)
+    # 모든 프로세스가 run_dir 생성될 때까지 대기
+    accelerator.wait_for_everyone()
+
+    if accelerator.is_main_process:
+        wandb.init(project="3Dfront-LLM", config=config, name="train_3dfront_run")
+        wandb.watch(model, log="all")
+    # ---------------------------------------------------------------
+
     # 9. 학습
     num_epochs = config["num_epochs"]
     for epoch in range(num_epochs):
         # == Training ==
         model.train()
         train_loss_sum = 0.0
-        for layout, image in tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{num_epochs} [Train]"):
+        for layout, image in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]"):
             layout = layout.to(device)
             image = image.to(device)
 
@@ -149,23 +171,35 @@ def main(args):
         model.eval()
         val_loss_sum = 0.0
         with torch.no_grad():
-            for layout, image in tqdm(val_dataloader, desc=f"Epoch {epoch+1}/{num_epochs} [Val]"):
+            for layout, image in tqdm(val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]"):
                 layout = layout.to(device)
                 image = image.to(device)
+
                 output = model(image)
                 loss = criterion(output, layout)
                 val_loss_sum += loss.item()
         val_loss_avg = val_loss_sum / len(val_dataloader)
 
         # Epoch 결과 출력
-        print(f"[Epoch {epoch+1}/{num_epochs}] Train Loss: {train_loss_avg:.4f} | Val Loss: {val_loss_avg:.4f}")
+        print(f"[Epoch {epoch + 1}/{num_epochs}] Train Loss: {train_loss_avg:.4f} | Val Loss: {val_loss_avg:.4f}")
+
+        # -- wandb 로깅 (메인 프로세스에서만) --
+        if accelerator.is_main_process:
+            wandb.log({
+                "train_loss": train_loss_avg,
+                "val_loss": val_loss_avg,
+                "epoch": epoch + 1
+            })
 
         # 모델 저장 (모든 프로세스가 완료될 때만 저장)
         accelerator.wait_for_everyone()
         unwrapped_model = accelerator.unwrap_model(model)
-        save_path = f"model_checkpoint_epoch_{epoch+1}.pth"
-        torch.save(unwrapped_model.state_dict(), save_path)
-        print(f"Model saved at {save_path}\n")
+
+        # 메인 프로세스에서만 실제로 저장
+        if accelerator.is_main_process:
+            save_path = os.path.join(run_dir, f"model_checkpoint_epoch_{epoch + 1}.pth")
+            torch.save(unwrapped_model.state_dict(), save_path)
+            print(f"Model saved at {save_path}\n")
 
 
 if __name__ == "__main__":
