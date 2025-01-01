@@ -43,79 +43,79 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
     if torch.is_tensor(pred_layout):
         pred_layout = pred_layout.detach().cpu().numpy()
 
-    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    # Determine the number of categories based on gt_layout and pred_layout
+    # Assuming categories are represented as one-hot or probability vectors starting from index 7
+    num_categories_gt = gt_layout.shape[-1] - 7
+    num_categories_pred = pred_layout.shape[-1] - 7
+    num_categories = max(num_categories_gt, num_categories_pred)
 
-    # 원본 layout
-    for element in gt_layout:
-        pos = element[:3]
-        size = element[3:6]
-        rot = element[6:7]
-        category = element[7:]
+    # Define color map
+    cmap = plt.get_cmap('tab20')  # You can choose other colormaps like 'tab10', 'tab20', etc.
+    colors = [cmap(i) for i in range(num_categories)]
 
-        width, height, depth = size[0] * 2, size[1] * 2, size[2] * 2  # 원본 코드처럼 *2
-        dx, dy, dz = pos
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))  # Increased figure size for better visibility
 
-        # Shapely를 사용하여 2D Polygon(Top-View) 구성
-        # (width, depth) 기준으로 XY plane 대신 XZ plane을 사용하므로,
-        # Polygon의 y좌표 자리에 depth를 넣어서 "바닥에서 본 형태"를 그립니다.
-        base_rect = Polygon([
-            (-width / 2, -depth / 2),
-            (width / 2, -depth / 2),
-            (width / 2, depth / 2),
-            (-width / 2, depth / 2)
-        ])
+    # Helper function to plot a layout
+    def plot_layout(layout, ax, is_pred=False):
+        for element in layout:
+            pos = element[:3]
+            size = element[3:6]
+            rot = element[6]
+            category = element[7:]
 
-        # 회전은 라디안 단위로, base_rect를 중심에서 angle[0]만큼 회전 (Y축 기준 회전 가정)
-        # Shapely rotate 함수는 기본적으로 origin='center'일 때,
-        # polygon의 centroid를 기준으로 회전합니다. (origin 파라미터로 조절 가능)
-        rect_rotated = rotate(base_rect, rot[0], use_radians=True)
+            # For pred_layout, check if any category probability >= 0.5
+            if is_pred:
+                max_prob = np.max(category)
+                if max_prob < 0.5:
+                    continue  # Skip this object as it doesn't meet the threshold
+                category_idx = np.argmax(category)
+            else:
+                category_idx = np.argmax(category)
 
-        # X방향으로 dx, Y방향(실제로는 Z축)을 위해 dz를 사용해 평행이동
-        rect_translated = translate(rect_rotated, xoff=dx, yoff=dz)
+            # Assign color based on category
+            color = colors[category_idx] if category_idx < len(colors) else (0.5, 0.5, 0.5, 1)  # Default to gray if out of range
 
-        # 폴리곤 시각화
-        x_coords, y_coords = rect_translated.exterior.xy
-        axes[0].fill(x_coords, y_coords, alpha=0.4)
+            width, height, depth = size[0] * 2, size[1] * 2, size[2] * 2  # Scale sizes as per original code
+            dx, dy, dz = pos
 
-    axes[0].set_title("GT Layout")
+            # Create base rectangle centered at origin
+            base_rect = Polygon([
+                (-width / 2, -depth / 2),
+                (width / 2, -depth / 2),
+                (width / 2, depth / 2),
+                (-width / 2, depth / 2)
+            ])
+
+            # Rotate the rectangle around its centroid
+            rect_rotated = rotate(base_rect, rot, use_radians=True)
+
+            # Translate the rectangle to its position
+            rect_translated = translate(rect_rotated, xoff=dx, yoff=dz)
+
+            # Extract coordinates for plotting
+            x_coords, y_coords = rect_translated.exterior.xy
+            ax.fill(x_coords, y_coords, alpha=0.6, color=color, edgecolor='k')
+
+    # Plot Ground Truth Layout
+    plot_layout(gt_layout, axes[0], is_pred=False)
+    axes[0].set_title("Ground Truth Layout", fontsize=16)
     axes[0].axis("off")
     axes[0].set_aspect('equal', adjustable='box')
 
-    # 모델 output layout
-    # 원본 layout
-    for element in pred_layout:
-        pos = element[:3]
-        size = element[3:6]
-        rot = element[6:7]
-        category = element[7:]
-
-        width, height, depth = size[0] * 2, size[1] * 2, size[2] * 2  # 원본 코드처럼 *2
-        dx, dy, dz = pos
-
-        # Shapely를 사용하여 2D Polygon(Top-View) 구성
-        # (width, depth) 기준으로 XY plane 대신 XZ plane을 사용하므로,
-        # Polygon의 y좌표 자리에 depth를 넣어서 "바닥에서 본 형태"를 그립니다.
-        base_rect = Polygon([
-            (-width / 2, -depth / 2),
-            (width / 2, -depth / 2),
-            (width / 2, depth / 2),
-            (-width / 2, depth / 2)
-        ])
-
-        # 회전은 라디안 단위로, base_rect를 중심에서 angle[0]만큼 회전 (Y축 기준 회전 가정)
-        # Shapely rotate 함수는 기본적으로 origin='center'일 때,
-        # polygon의 centroid를 기준으로 회전합니다. (origin 파라미터로 조절 가능)
-        rect_rotated = rotate(base_rect, rot[0], use_radians=True)
-
-        # X방향으로 dx, Y방향(실제로는 Z축)을 위해 dz를 사용해 평행이동
-        rect_translated = translate(rect_rotated, xoff=dx, yoff=dz)
-
-        # 폴리곤 시각화
-        x_coords, y_coords = rect_translated.exterior.xy
-        axes[1].fill(x_coords, y_coords, alpha=0.4)
-    axes[1].set_title("Predicted Layout")
+    # Plot Predicted Layout
+    plot_layout(pred_layout, axes[1], is_pred=True)
+    axes[1].set_title("Predicted Layout", fontsize=16)
     axes[1].axis("off")
     axes[1].set_aspect('equal', adjustable='box')
+
+    # Create a legend for categories
+    # Assuming you have category names; if not, you can use category indices
+    # Example:
+    # category_names = ['Chair', 'Table', 'Sofa', ...]
+    # Here, we'll use category indices for demonstration
+    category_patches = [plt.Line2D([0], [0], marker='s', color='w', label=f'Category {i}',
+                                   markerfacecolor=colors[i], markersize=10) for i in range(num_categories)]
+    plt.legend(handles=category_patches, bbox_to_anchor=(1.05, 1), loc='upper left', title="Categories")
 
     plt.tight_layout()
 
@@ -124,7 +124,7 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
 
     # 예: "batch0_sample0.png" 형태로 저장
     save_path = os.path.join(save_dir, f"batch{batch_idx}_sample{sample_idx}.png")
-    plt.savefig(save_path, dpi=150)
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()  # 메모리 해제
 
 
