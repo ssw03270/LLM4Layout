@@ -79,6 +79,7 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
 
     axes[0].set_title("GT Layout")
     axes[0].axis("off")
+    axes[0].set_aspect('equal', adjustable='box')
 
     # 모델 output layout
     # 원본 layout
@@ -114,6 +115,7 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
         axes[1].fill(x_coords, y_coords, alpha=0.4)
     axes[1].set_title("Predicted Layout")
     axes[1].axis("off")
+    axes[1].set_aspect('equal', adjustable='box')
 
     plt.tight_layout()
 
