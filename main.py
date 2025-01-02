@@ -37,11 +37,11 @@ def parse_args():
 
     parser.add_argument("--root_dir", type=str, default="./datasets/threed_front_diningroom",
                         help="Dataset root directory")
-    parser.add_argument("--num_epochs", type=int, default=1000,
+    parser.add_argument("--num_epochs", type=int, default=100,
                         help="Number of training epochs")
-    parser.add_argument("--lr", type=float, default=1e-4,
+    parser.add_argument("--lr", type=float, default=0.01,
                         help="Learning rate")
-    parser.add_argument("--batch_size", type=int, default=2,
+    parser.add_argument("--batch_size", type=int, default=1,
                         help="Batch size for training")
     parser.add_argument("--fix_seed", type=int, default=1,
                         help="Random seed for reproducibility")
@@ -61,9 +61,9 @@ def parse_args():
                         help="Number of layers in the LLM model")
     parser.add_argument("--dropout", type=float, default=0.1,
                         help="Dropout rate")
-    parser.add_argument("--d_model", type=int, default=16,
+    parser.add_argument("--d_model", type=int, default=32,
                         help="Dimension of the model encoder/decoder hidden size")
-    parser.add_argument("--d_ff", type=int, default=32,
+    parser.add_argument("--d_ff", type=int, default=128,
                         help="Dimension of the feedforward layer")
     parser.add_argument("--n_heads", type=int, default=8,
                         help="Number of attention heads")
