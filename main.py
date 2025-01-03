@@ -39,7 +39,7 @@ def parse_args():
                         help="Dataset root directory")
     parser.add_argument("--num_epochs", type=int, default=100,
                         help="Number of training epochs")
-    parser.add_argument("--lr", type=float, default=0.01,
+    parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate")
     parser.add_argument("--batch_size", type=int, default=1,
                         help="Batch size for training")
