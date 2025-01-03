@@ -260,6 +260,10 @@ def main(args):
 
     # 9. 학습
     for epoch in range(num_epochs):
+        if accelerator.is_main_process:
+            save_path = os.path.join(run_dir, f"{epoch + 1}")
+            os.makedirs(save_path, exist_ok=True)
+
         # == Training ==
         model.train()
         train_loss_sum = 0.0
@@ -313,10 +317,6 @@ def main(args):
                 val_loss_sum += mean_loss
                 val_steps += 1
 
-            if accelerator.is_main_process:
-                save_path = os.path.join(run_dir, f"{epoch + 1}")
-                os.makedirs(save_path, exist_ok=True)
-
             for batch_idx, (layout, image) in enumerate(tqdm(test_dataloader,
                                                              desc=f"Epoch {epoch + 1}/{num_epochs} [Test]",
                                                              disable=not accelerator.is_main_process)):
@@ -339,6 +339,7 @@ def main(args):
                     gt_layout_sample = layout[sample_idx]  # (25, 33)
                     pred_layout_sample = output[sample_idx]  # (25, 33)
 
+                    save_path = os.path.join(run_dir, f"{epoch + 1}")
                     visualize_layouts(
                         gt_layout=gt_layout_sample,
                         pred_layout=pred_layout_sample,
