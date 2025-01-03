@@ -35,9 +35,9 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
 
     # 텐서라면 CPU로 이동 후 넘파이 변환
     if torch.is_tensor(gt_layout):
-        gt_layout = gt_layout.detach().cpu().numpy()
+        gt_layout = gt_layout.to(torch.float32).detach().cpu().numpy()
     if torch.is_tensor(pred_layout):
-        pred_layout = pred_layout.detach().cpu().numpy()
+        pred_layout = pred_layout.to(torch.float32).detach().cpu().numpy()
 
     # Determine the number of categories based on gt_layout and pred_layout
     # Assuming categories are represented as one-hot or probability vectors starting from index 7
@@ -241,10 +241,9 @@ def main(args):
     # 8. Loss 정의
     criterion = nn.MSELoss()
 
-    run_dir = None  # 분산 환경에서 프로세스마다 변수를 공유하기 위해 선언
+    now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = f"run_{now_str}"
     if accelerator.is_main_process:
-        now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = f"run_{now_str}"
         os.makedirs(run_dir, exist_ok=True)
 
         # config.json 저장
