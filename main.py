@@ -159,8 +159,8 @@ def main(args):
 
         for layout, image in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]",
                                   disable=not accelerator.is_main_process):
-            layout = layout.float().to(device)
-            image = image.float().to(device)
+            layout = layout.to(device)
+            image = image.to(device)
 
             optimizer.zero_grad()
             output = model(image)
