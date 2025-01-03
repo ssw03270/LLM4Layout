@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 from shapely.affinity import rotate, translate
 
-def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
+def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, device, save_dir):
     """
     원본 layout(gt_layout)과 모델의 output layout(pred_layout)을
     하나의 그림에 나란히 시각화하여 저장한다.
@@ -120,7 +120,8 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
     os.makedirs(save_dir, exist_ok=True)
 
     # 예: "batch0_sample0.png" 형태로 저장
-    save_path = os.path.join(save_dir, f"batch{batch_idx}_sample{sample_idx}.png")
+    device = device.replace(":", "")
+    save_path = os.path.join(save_dir, f"batch{batch_idx}_sample{sample_idx}_{device}.png")
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()  # 메모리 해제
 
@@ -222,7 +223,7 @@ def main(args):
     val_dataloader = DataLoader(val_dataset,
                                 batch_size=config["batch_size"],
                                 shuffle=False)
-    test_dataloader = DataLoader(val_dataset,
+    test_dataloader = DataLoader(test_dataset,
                                 batch_size=config["batch_size"],
                                 shuffle=False)
 
@@ -344,6 +345,7 @@ def main(args):
                         pred_layout=pred_layout_sample,
                         batch_idx=batch_idx,
                         sample_idx=sample_idx,
+                        device=str(device),
                         save_dir=save_path
                     )
 
