@@ -13,7 +13,8 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 
-from accelerate import Accelerator
+from accelerate import Accelerator, DeepSpeedPlugin
+from accelerate import DistributedDataParallelKwargs
 
 from models.LLM import Model
 from models.dataloader import Dataset_3Dfront
@@ -91,9 +92,12 @@ def main(args):
         "d_ff": args.d_ff,
         "n_heads": args.n_heads,
     }
+    num_epochs = config["num_epochs"]
 
     # 2. Accelerator 설정 (멀티 GPU, TPUs 지원)
-    accelerator = Accelerator()
+    ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+    deepspeed_plugin = DeepSpeedPlugin(hf_ds_config='./ds_config_zero2.json')
+    accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], deepspeed_plugin=deepspeed_plugin)
     device = accelerator.device
 
     # 3. Seed 고정
@@ -114,6 +118,7 @@ def main(args):
                                 batch_size=config["batch_size"],
                                 shuffle=False)
 
+    train_steps = len(train_dataloader)
     # 5. 모델 정의
     model = Model(config)
 
@@ -146,8 +151,6 @@ def main(args):
         wandb.watch(model, log="all")
 
     # 9. 학습
-    num_epochs = config["num_epochs"]
-
     for epoch in range(num_epochs):
         # == Training ==
         model.train()
