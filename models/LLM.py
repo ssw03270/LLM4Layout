@@ -135,7 +135,7 @@ class Model(nn.Module):
         prompt_embeddings = self.llm_model.get_input_embeddings()(prompt.to(floor_plan.device))  # (batch, prompt_token, dim)
 
         source_embeddings = self.mapping_layer(self.word_embeddings.permute(1, 0)).permute(1, 0)
-        enc_out, n_vars = self.patch_embedding(floor_plan.to(torch.bfloat16))
+        enc_out, n_vars = self.patch_embedding(floor_plan)
         enc_out = self.reprogramming_layer(enc_out, source_embeddings, source_embeddings)
 
         llama_enc_out = torch.cat([prompt_embeddings, enc_out], dim=1)
