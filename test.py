@@ -13,6 +13,8 @@ from shapely.affinity import rotate, translate
 from models.LLM import Model
 from models.dataloader import Dataset_3Dfront
 
+from accelerate import Accelerator  # 추가
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test a trained Model checkpoint with a test dataloader.")
@@ -24,6 +26,8 @@ def parse_args():
                         help="Batch size for test dataloader")
     parser.add_argument("--save_dir", type=str, default="./test_results",
                         help="Directory to save visualization images")
+    parser.add_argument("--mixed_precision", type=str, default="bf16",
+                        help="Mixed precision type (none, fp16, bf16)")  # 추가
     return parser.parse_args()
 
 
@@ -73,7 +77,8 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, save_dir):
                 category_idx = np.argmax(category)
 
             # Assign color based on category
-            color = colors[category_idx] if category_idx < len(colors) else (0.5, 0.5, 0.5, 1)  # Default to gray if out of range
+            color = colors[category_idx] if category_idx < len(colors) else (
+            0.5, 0.5, 0.5, 1)  # Default to gray if out of range
 
             width, height, depth = size[0] * 2, size[1] * 2, size[2] * 2  # Scale sizes as per original code
             dx, dy, dz = pos
@@ -152,36 +157,37 @@ def main():
     }
     # =========================
 
-    # 1) 모델 초기화
-    model = Model(config)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    # 1) Accelerator 초기화
+    accelerator = Accelerator(mixed_precision=args.mixed_precision)
+    device = accelerator.device
 
-    # 2) 체크포인트 로드
+    # 2) 모델 초기화
+    model = Model(config)
+
+    # 3) 체크포인트 로드
     print(f"[INFO] Loading checkpoint from: {args.checkpoint_path}")
     state_dict = torch.load(args.checkpoint_path, map_location=device)
     model.load_state_dict(state_dict)
     model.eval()
 
-    # 3) 테스트셋 & 로더 준비
+    # 4) 데이터셋 & 로더 준비
     test_dataset = Dataset_3Dfront(root_dir=args.root_dir, data_type='test')
-    test_dataloader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        shuffle=False
+    test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
     )
 
     print(f"[INFO] Test dataset size: {len(test_dataset)}")
     print(f"[INFO] Test loader batch size: {args.batch_size}")
 
-    # 4) 모델 추론 (Inference) 및 시각화
+    # 5) Accelerator로 모델과 데이터 로더 준비
+    test_dataloader, model = accelerator.prepare(
+        test_dataloader, model
+    )
+
+    # 6) 모델 추론 (Inference) 및 시각화
     with torch.no_grad():
         for batch_idx, (layout, image) in enumerate(test_dataloader):
-            layout = layout.to(device)  # shape: (B, 25, 33)
-            image = image.to(device)    # shape: (B, H, W, 1)  (마스크)
-
             # 모델 추론
-            output = model(image)       # shape 예: (B, 25, 33)
+            output = model(image)  # shape 예: (B, 25, 33)
 
             # 배치 내 각 샘플별로 시각화
             batch_size = layout.size(0)
