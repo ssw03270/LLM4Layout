@@ -151,8 +151,8 @@ def main():
         "llm_model": "LLAMA-3.2-3B",
         "llm_layers": 28,
         "dropout": 0.1,
-        "d_model": 32,
-        "d_ff": 128,
+        "d_model": 16,
+        "d_ff": 32,
         "n_heads": 8
     }
     # =========================
