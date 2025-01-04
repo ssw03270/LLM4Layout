@@ -20,7 +20,6 @@ class Dataset_3Dfront(Dataset):
                     data['angles'][idx] +
                     data['class_labels'][idx]
                 )
-            np.random.shuffle(layout_dataset)
 
             self.layout_dataset.append(layout_dataset)
             self.mask_dataset.append(np.expand_dims(data['room_mask'][:, :, 0], axis=-1))
@@ -29,8 +28,11 @@ class Dataset_3Dfront(Dataset):
         self.data_len = len(self.layout_dataset)
 
     def __getitem__(self, index):
+        layout = self.layout_dataset[index]
+        shuffled_layout = layout[np.random.permutation(layout.shape[0])]
+
         return (
-            torch.tensor(self.layout_dataset[index], dtype=torch.float32),
+            torch.tensor(shuffled_layout, dtype=torch.float32),
             torch.tensor(self.mask_dataset[index], dtype=torch.float32),
         )
 
