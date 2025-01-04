@@ -20,6 +20,7 @@ class Dataset_3Dfront(Dataset):
                     data['angles'][idx] +
                     data['class_labels'][idx]
                 )
+            np.random.shuffle(layout_dataset)
 
             self.layout_dataset.append(layout_dataset)
             self.mask_dataset.append(np.expand_dims(data['room_mask'][:, :, 0], axis=-1))
