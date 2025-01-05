@@ -139,7 +139,6 @@ class Model(nn.Module):
         enc_out = self.reprogramming_layer(enc_out, source_embeddings, source_embeddings)
 
         llama_enc_out = torch.cat([prompt_embeddings, enc_out], dim=1)
-        print(llama_enc_out.dtype)
         dec_out = self.llm_model(inputs_embeds=llama_enc_out).last_hidden_state
         dec_out = dec_out[:, :, :self.d_ff]
 
