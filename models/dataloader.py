@@ -32,8 +32,8 @@ class Dataset_3Dfront(Dataset):
         shuffled_layout = layout[np.random.permutation(layout.shape[0])]
 
         return (
-            torch.tensor(shuffled_layout, dtype=torch.float32),
-            torch.tensor(self.mask_dataset[index], dtype=torch.float32),
+            torch.tensor(shuffled_layout, dtype=torch.bfloat16),
+            torch.tensor(self.mask_dataset[index], dtype=torch.bfloat16),
         )
 
     def __len__(self):

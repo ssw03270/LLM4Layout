@@ -200,7 +200,9 @@ def main(args):
     num_epochs = config["num_epochs"]
 
     # 2. Accelerator 설정 (멀티 GPU, TPUs 지원)
-    accelerator = Accelerator()
+    ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+    deepspeed_plugin = DeepSpeedPlugin(hf_ds_config='./ds_config_zero2.json')
+    accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], deepspeed_plugin=deepspeed_plugin)
     device = accelerator.device
 
     # 3. Seed 고정
