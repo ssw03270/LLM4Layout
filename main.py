@@ -62,7 +62,7 @@ def visualize_layouts(gt_layout, pred_layout, batch_idx, sample_idx, device, sav
             # For pred_layout, check if any category probability >= 0.5
             if is_pred:
                 max_idx = np.argmax(category)
-                if max_idx == 34:
+                if max_idx == len(category) - 1:
                     continue  # 'none' 레이블이 최고이므로 이 객체를 건너뜀
 
                 category_idx = max_idx
