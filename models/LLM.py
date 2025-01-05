@@ -101,7 +101,7 @@ class Model(nn.Module):
         prompt = []
         for b in range(floor_plan.shape[0]):
             prompt_ = (
-                f"3D Front Indoor is a crucial resource for exploring the design and usage of indoor spaces. "
+                f"<|start_prompt|>3D Front Indoor is a crucial resource for exploring the design and usage of indoor spaces. "
                 f"This dataset contains indoor layouts from two distinct urban areas in China. It includes three types of room categories—living room, dining room, and bedroom. "
                 f"Each data point provides an empty room image and layout elements, described by {{object category, 3D location (x, y, z), axis-aligned size (h, w, d), orientation (radians)}}. "
                 f"The train/validation/test split is 7:2:1.\n\n"
@@ -125,7 +125,7 @@ class Model(nn.Module):
                 f"whereas l_shaped_sofa has the highest (mean = 0.90699, std = 0.16590). Situated at the median is ceiling_lamp (mean = 0.29098, std = 0.09426).\n\n"
                 f"Lastly, analyzing the rotation angles in radians reveals that chaise_longue_sofa has the lowest mean (-1.12199, std = 1.38329), "
                 f"chinese_chair holds the highest (0.21154, std = 1.78975), and stool occupies the median position (-0.24491, std = 1.42962). "
-                f"These figures together illustrate how the dataset captures a wide variety of configurations for different categories, providing comprehensive statistics on their 3D positions, dimensions, and orientations."
+                f"These figures together illustrate how the dataset captures a wide variety of configurations for different categories, providing comprehensive statistics on their 3D positions, dimensions, and orientations.<|end_prompt|>"
             )
             prompt.append(prompt_)
 
