@@ -49,7 +49,7 @@ def compute_category_means(train, val, test, stats):
 
     # 모든 데이터셋(train, val, test)을 합쳐서 처리
     for dataset in [train, val, test]:
-        for data_point in dataset:
+        for file_path, data_point in dataset.items():
             class_labels = data_point['class_labels']      # (N, one-hot)
             sizes = data_point['sizes']                    # (N, 3)
             translations = data_point['translations']      # (N, 3)
@@ -464,9 +464,9 @@ def process_scene(folder_path, room, split_path):
         f for f in os.listdir(target_path)
         if os.path.isdir(os.path.join(target_path, f)) and "test" not in f and "train" not in f
     ]
-    train_preprocessed_data = []
-    test_preprocessed_data = []
-    val_preprocessed_data = []
+    train_preprocessed_data = {}
+    test_preprocessed_data = {}
+    val_preprocessed_data = {}
     for subfolder in tqdm(subfolders):
         file_path = os.path.join(target_path, subfolder)
         file_data_type = parse_data_type(file_path, valid_split_data)
@@ -498,35 +498,30 @@ def process_scene(folder_path, room, split_path):
         # visualize_polygons(room_polygon, object_polygons)
 
         if file_data_type == "train":
-            train_preprocessed_data.append(
-                {
+            train_preprocessed_data[subfolder] = {
                     "class_labels": boxes_data['class_labels'],
                     "sizes": boxes_data['sizes'],
                     "angles": boxes_data['angles'],
                     "translations": boxes_data['translations'],
-                    "room_mask": room_mask_data,
+                    "room_mask": room_mask_data
                 }
-            )
         elif file_data_type == "val":
-            val_preprocessed_data.append(
-                {
+            val_preprocessed_data[subfolder] = {
                     "class_labels": boxes_data['class_labels'],
                     "sizes": boxes_data['sizes'],
                     "angles": boxes_data['angles'],
                     "translations": boxes_data['translations'],
-                    "room_mask": room_mask_data,
+                    "room_mask": room_mask_data
                 }
-            )
+
         elif file_data_type == "test":
-            test_preprocessed_data.append(
-                {
+            test_preprocessed_data[subfolder] = {
                     "class_labels": boxes_data['class_labels'],
                     "sizes": boxes_data['sizes'],
                     "angles": boxes_data['angles'],
                     "translations": boxes_data['translations'],
-                    "room_mask": room_mask_data,
+                    "room_mask": room_mask_data
                 }
-            )
 
     return train_preprocessed_data, test_preprocessed_data, val_preprocessed_data
 
@@ -535,9 +530,12 @@ def save_dict_list_to_npz(train, val, test, file_path):
     Saves a list of dictionaries to a .npz file.
     """
     try:
-        np.save(os.path.join(file_path, "train.npy"), train)
-        np.save(os.path.join(file_path, "val.npy"), val)
-        np.save(os.path.join(file_path, "test.npy"), test)
+        with open(os.path.join(file_path, "train.pkl"), 'wb') as f:
+            pickle.dump(train, f)
+        with open(os.path.join(file_path, "val.pkl"), 'wb') as f:
+            pickle.dump(val, f)
+        with open(os.path.join(file_path, "test.pkl"), 'wb') as f:
+            pickle.dump(test, f)
         print(f"Data successfully saved to {file_path}")
 
     except Exception as e:
