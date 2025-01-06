@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pickle
 
 import torch
 from torch.utils.data import Dataset
@@ -7,11 +8,12 @@ from torch.utils.data import Dataset
 class Dataset_3Dfront(Dataset):
     def __init__(self, root_dir, data_type):
         self.root_dir = root_dir
-        loaded_data = np.load(os.path.join(root_dir, data_type + ".npy"), allow_pickle=True)
+        with open(os.path.join(root_dir, data_type + ".pkl"), 'rb') as f:
+            loaded_data = pickle.load(f)
 
         self.layout_dataset = []
         self.mask_dataset = []
-        for data in loaded_data:
+        for file_path, data in loaded_data.items():
             layout_dataset = np.zeros((25, 34))
             for idx in range(len(data['translations'])):
                 layout_dataset[idx] = np.array(
