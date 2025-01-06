@@ -103,7 +103,7 @@ def main():
     index = build_faiss_index(train_latent, use_gpu=True)  # Assuming GPU is available
 
     # Optionally, save the train FAISS index
-    index_path = 'faiss_index_train.bin'
+    index_path = os.path.join(args.root_dir, 'faiss_index_train.bin')
     faiss.write_index(faiss.index_gpu_to_cpu(index) if faiss.StandardGpuResources else index, index_path)
     print(f"FAISS index for train set saved to {index_path}")
 
@@ -116,7 +116,7 @@ def main():
         retrieval_results[split] = retrieval
 
         # Save retrieval results for each split
-        dict_save_path = f'retrieval_{split}.pkl'
+        dict_save_path = os.path.join(args.root_dir, f'retrieval_{split}.pkl')
         with open(dict_save_path, 'wb') as f:
             pickle.dump(retrieval, f)
         print(f"Retrieval results for {split} set saved to {dict_save_path}")
