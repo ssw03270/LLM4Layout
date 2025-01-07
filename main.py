@@ -178,7 +178,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 def main(args):
     # 1. Config 설정
     config = {
@@ -228,7 +227,6 @@ def main(args):
                                 batch_size=config["batch_size"],
                                 shuffle=False)
 
-    train_steps = len(train_dataloader)
     # 5. 모델 정의
     model = Model(config)
 
@@ -270,22 +268,22 @@ def main(args):
         train_loss_sum = 0.0
         train_steps = 0  # 평균을 내기 위해 step(배치) 수 카운트
 
-        for layout, image in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]",
-                                  disable=not accelerator.is_main_process):
-            layout = layout.to(device)
-            image = image.to(device)
+        for source_layout, source_image, retrieved_layout, retrieved_image in (
+                tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Train]", disable=not accelerator.is_main_process)):
+            source_layout = source_layout.to(device)
+            source_image = source_image.to(device)
+            retrieved_layout = retrieved_layout.to(device)
+            retrieved_image = retrieved_image.to(device)
 
             optimizer.zero_grad()
-            output = model(image)
-            loss = criterion(output, layout)
+            predicted_layout = model(source_image, retrieved_layout, retrieved_image)
+            loss = criterion(predicted_layout, source_layout)
 
             # 역전파
             accelerator.backward(loss)
             optimizer.step()
 
             with torch.no_grad():
-                # loss 는 shape=() 인 스칼라 텐서
-                # gather 하면 모든 프로세스의 loss 값이 (world_size,) 텐서로 모임
                 gathered_loss = accelerator.gather(loss.detach())
                 mean_loss = gathered_loss.mean().item()
 
@@ -302,14 +300,16 @@ def main(args):
         test_loss_sum = 0.0
         test_steps = 0
 
-        with torch.no_grad():
-            for layout, image in tqdm(val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]",
-                                      disable=not accelerator.is_main_process):
-                layout = layout.to(device)
-                image = image.to(device)
+        with (torch.no_grad()):
+            for source_layout, source_image, retrieved_layout, retrieved_image in (
+                tqdm(val_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Val]", disable=not accelerator.is_main_process)):
+                source_layout = source_layout.to(device)
+                source_image = source_image.to(device)
+                retrieved_layout = retrieved_layout.to(device)
+                retrieved_image = retrieved_image.to(device)
 
-                output = model(image)
-                loss = criterion(output, layout)
+                predicted_layout = model(source_image, retrieved_layout, retrieved_image)
+                loss = criterion(predicted_layout, source_layout)
 
                 # 각 프로세스별 loss를 gather 후 평균
                 gathered_loss = accelerator.gather(loss.detach())
@@ -318,14 +318,15 @@ def main(args):
                 val_loss_sum += mean_loss
                 val_steps += 1
 
-            for batch_idx, (layout, image) in enumerate(tqdm(test_dataloader,
-                                                             desc=f"Epoch {epoch + 1}/{num_epochs} [Test]",
-                                                             disable=not accelerator.is_main_process)):
-                layout = layout.to(device)
-                image = image.to(device)
+            for batch_idx, (source_layout, source_image, retrieved_layout, retrieved_image) in (
+                    enumerate(tqdm(test_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs} [Test]", disable=not accelerator.is_main_process))):
+                source_layout = source_layout.to(device)
+                source_image = source_image.to(device)
+                retrieved_layout = retrieved_layout.to(device)
+                retrieved_image = retrieved_image.to(device)
 
-                output = model(image)
-                loss = criterion(output, layout)
+                predicted_layout = model(source_image, retrieved_layout, retrieved_image)
+                loss = criterion(predicted_layout, source_layout)
 
                 # 각 프로세스별 loss를 gather 후 평균
                 gathered_loss = accelerator.gather(loss.detach())
@@ -335,10 +336,10 @@ def main(args):
                 test_steps += 1
 
                 # 배치 내 각 샘플별로 시각화
-                batch_size = layout.size(0)
+                batch_size = source_layout.size(0)
                 for sample_idx in range(batch_size):
-                    gt_layout_sample = layout[sample_idx]  # (25, 33)
-                    pred_layout_sample = output[sample_idx]  # (25, 33)
+                    gt_layout_sample = source_layout[sample_idx]  # (25, 33)
+                    pred_layout_sample = predicted_layout[sample_idx]  # (25, 33)
 
                     save_path = os.path.join(run_dir, f"{epoch + 1}")
                     visualize_layouts(
@@ -346,7 +347,7 @@ def main(args):
                         pred_layout=pred_layout_sample,
                         batch_idx=batch_idx,
                         sample_idx=sample_idx,
-                        device=str(device),
+                        device=str(pred_layout_sample.device),
                         save_dir=save_path
                     )
 
