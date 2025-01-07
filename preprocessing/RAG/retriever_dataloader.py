@@ -18,8 +18,8 @@ class RetrieverDataset(Dataset):
         ])
 
         self.root_dir = root_dir
-        with open(os.path.join(root_dir, data_type + ".pkl"), 'rb') as f:
-            loaded_data = pickle.load(f)
+        with open(os.path.join(root_dir, "dataset.pkl"), 'rb') as f:
+            loaded_data = pickle.load(f)[data_type]["layout"]
 
         self.layout_dataset = []
         self.mask_dataset = []
@@ -49,7 +49,6 @@ class RetrieverDataset(Dataset):
         image_mask = self.preprocess(image_mask)
 
         file_path = self.path_dataset[index]
-        print(image_mask.shape, file_path)
 
         return (file_path, image_mask)
 

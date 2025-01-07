@@ -115,19 +115,11 @@ def main():
         retrieval = perform_retrieval(index, latent, file_paths, train_file_paths, k=5, is_train=is_train)
         retrieval_results[split] = retrieval
 
-        # Save retrieval results for each split
-        dict_save_path = os.path.join(args.root_dir, f'retrieval_{split}.pkl')
-        with open(dict_save_path, 'wb') as f:
-            pickle.dump(retrieval, f)
-        print(f"Retrieval results for {split} set saved to {dict_save_path}")
-
-    # Display a sample from each retrieval dictionary
-    for split in splits:
-        sample_key = list(retrieval_results[split].keys())[0]
-        sample_retrieved = retrieval_results[split][sample_key]
-        print(f"\nSample retrieval for {split} set - {sample_key}:")
-        for rank, path in enumerate(sample_retrieved, start=1):
-            print(f"  Rank {rank}: {path}")
+    # Save retrieval results for each split
+    dict_save_path = os.path.join(args.root_dir, f'retrieval_results.pkl')
+    with open(dict_save_path, 'wb') as f:
+        pickle.dump(retrieval_results, f)
+    print(f"Retrieval results saved to {dict_save_path}")
 
 
 if __name__ == "__main__":
