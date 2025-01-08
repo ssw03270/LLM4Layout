@@ -1,87 +1,134 @@
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+import os
+import glob
+import re
+import json
 import math
 
-# Define the furniture data
-furniture_items = [
-    {'furniture': 'dining_table', 'x': -0.82, 'y': 0.37, 'z': 0.13, 'width': 1.5, 'height': 0.8, 'depth': 1.2,
-     'angle': 0.0, 'color': 'crimson'},
-    {'furniture': 'dining_chair', 'x': -1.59, 'y': 0.4, 'z': -0.6, 'width': 0.5, 'height': 0.8, 'depth': 0.7,
-     'angle': 0.0, 'color': 'lightgreen'},
-    {'furniture': 'dining_chair', 'x': -0.89, 'y': 0.4, 'z': -0.6, 'width': 0.5, 'height': 0.8, 'depth': 0.7,
-     'angle': 0.0, 'color': 'lightgreen'},
-    {'furniture': 'dining_chair', 'x': -0.18, 'y': 0.4, 'z': -0.6, 'width': 0.5, 'height': 0.8, 'depth': 0.7,
-     'angle': 0.0, 'color': 'lightgreen'},
-    {'furniture': 'dining_chair', 'x': -1.58, 'y': 0.4, 'z': 0.85, 'width': 0.5, 'height': 0.8, 'depth': 0.7,
-     'angle': -3.14, 'color': 'lightgreen'},
-    {'furniture': 'dining_chair', 'x': -0.88, 'y': 0.4, 'z': 0.86, 'width': 0.5, 'height': 0.8, 'depth': 0.7,
-     'angle': -3.14, 'color': 'lightgreen'},
-    {'furniture': 'pendant_lamp', 'x': -1.2, 'y': 0.9, 'z': 0.13, 'width': 0.5, 'height': 1.5, 'depth': 0.8,
-     'angle': 0.0, 'color': 'white'},
-    {'furniture': 'console_table', 'x': -1.2, 'y': 0.2, 'z': 0.13, 'width': 1.5, 'height': 0.8, 'depth': 0.7,
-     'angle': 0.0, 'color': 'gray'}
-]
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
-# Create a new plot
-fig, ax = plt.subplots(figsize=(10, 8))
+from tqdm import tqdm
+
+from preprocessing.utils import *
+
+folder_path = 'E:/Resources/IndoorSceneSynthesis/InstructScene'
+room_lists = ["threed_front_diningroom", "threed_front_livingroom", "threed_front_bedroom"]
+room = room_lists[0]
+
+color_map = plt.cm.get_cmap('tab20', 35)
+predefined_colors = [to_hex(color_map(i)) for i in range(35)]
+
+stats = load_stats(os.path.join(folder_path, room, "dataset_stats.txt"))
+class_labels = stats["class_labels"]
+minx, miny, maxx, maxy = (stats["bounds_translations"][0],
+                          stats["bounds_translations"][2],
+                          stats["bounds_translations"][3],
+                          stats["bounds_translations"][5])
 
 
-# Function to add rotated rectangle
-def add_rotated_rect(ax, x, z, width, depth, angle, color, label=None):
-    # Calculate the lower-left corner based on center position
-    lower_left_x = x - width / 2
-    lower_left_z = z - depth / 2
-    # Create a rectangle
-    rect = patches.Rectangle((lower_left_x, lower_left_z), width, depth,
-                             linewidth=1, edgecolor='black', facecolor=color, alpha=0.7)
-    # Apply rotation
-    t = patches.transforms.Affine2D().rotate_around(x, z, angle) + ax.transData
-    rect.set_transform(t)
-    ax.add_patch(rect)
-    if label:
-        ax.text(x, z, label, ha='center', va='center', fontsize=8, color='black')
+def extract_json_objects_with_category(file_path):
+    """
+    Extracts JSON objects containing '{category' from a txt file and converts them to Python dictionaries.
+
+    Args:
+        file_path (str): Path to the txt file containing JSON-like objects.
+
+    Returns:
+        list: A list of dictionaries parsed from the JSON-like objects containing '{category'.
+    """
+    # Regex pattern to match JSON-like objects containing '{category'
+    pattern = r"\{[^{}]*?\"furniture\"[^{}]*?\}"
+
+    json_objects = []
+
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read().replace('\'', "\"")
+        matches = re.findall(pattern, content)  # Find all matches
+
+        for match in matches:
+            try:
+                json_obj = json.loads(match)  # Convert JSON string to Python dict
+                json_objects.append(json_obj)
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON: {e}")
+                print(f"Matched content: {match}")
+
+    return json_objects
+
+datasets_folder = os.path.join(os.path.dirname(__file__), "datasets")
+output_paths = glob.glob(os.path.join(datasets_folder, "*vlm_output.txt"))
+
+for output_path in tqdm(output_paths):
+    try:
+        room_name = output_path.split('\\')[-1].replace("_vlm_output.txt", "")
+        dataset = load_dataset(os.path.join("../../datasets", room, "dataset.pkl"))
+        room_polygon = Polygon(dataset["test"]["polygons"][room_name]["room_polygon"])
+
+        furniture_items = extract_json_objects_with_category(output_path)
+        plt.clf()
+
+        # Create a new plot
+        fig, ax = plt.subplots(figsize=(10, 8), dpi=300)
+
+        x_room, y_room = room_polygon.exterior.xy
+        ax.plot(x_room, y_room, color='black', alpha=1, label='Room Polygon')
+
+        # Function to add rotated rectangle
+        def add_rotated_rect(ax, x, z, width, depth, angle, color, label=None):
+            # Calculate the lower-left corner based on center position
+            lower_left_x = x - width / 2
+            lower_left_z = z - depth / 2
+            # Create a rectangle
+            rect = patches.Rectangle((lower_left_x, lower_left_z), width, depth,
+                                     linewidth=1, edgecolor='black', facecolor=color, alpha=0.7)
+            # Apply rotation
+            t = patches.transforms.Affine2D().rotate_around(x, z, angle) + ax.transData
+            rect.set_transform(t)
+            ax.add_patch(rect)
+            if label:
+                ax.text(x, z, label, ha='center', va='center', fontsize=8, color='black', clip_on=True)
 
 
-# Iterate through each furniture item and add to plot
-for item in furniture_items:
-    x = item['x']
-    z = item['z']
-    width = item['width']
-    depth = item['depth']
-    angle = item['angle']  # Assuming angle is in radians
-    color = item['color']
-    furniture = item['furniture']
+        # Iterate through each furniture item and add to plot
+        for item in furniture_items:
+            x = item['x']
+            z = item['z']
+            width = item['width']
+            depth = item['depth']
+            angle = item['angle']
+            furniture = item['furniture']
 
-    # Optionally, label certain furniture types
-    label = None
-    if furniture == 'dining_table':
-        label = 'Table'
-    elif furniture == 'dining_chair':
-        label = 'Chair'
-    elif furniture == 'pendant_lamp':
-        label = 'Lamp'
-    elif furniture == 'console_table':
-        label = 'Console'
+            if angle % 15 == 0:
+                angle = math.radians(angle)
 
-    add_rotated_rect(ax, x, z, width, depth, angle, color, label)
+            label = 34
+            if furniture in class_labels:
+                label = class_labels.index(furniture)
 
-# Set plot limits (adjust as needed)
-all_x = [item['x'] for item in furniture_items]
-all_z = [item['z'] for item in furniture_items]
-buffer = 2
-ax.set_xlim(min(all_x) - buffer, max(all_x) + buffer)
-ax.set_ylim(min(all_z) - buffer, max(all_z) + buffer)
+            color = predefined_colors[label]
 
-# Set labels and title
-ax.set_xlabel('X Position')
-ax.set_ylabel('Z Position')
-ax.set_title('2D Furniture Layout (X-Z Plane)')
+            add_rotated_rect(ax, x, z, width, depth, angle, color, furniture)
 
-# Add grid
-ax.grid(True, linestyle='--', alpha=0.5)
+        # Set plot limits (adjust as needed)
+        ax.set_xlim(minx - 0.1, maxx + 0.1)
+        ax.set_ylim(miny - 0.1, maxy + 0.1)
+        ax.set_aspect('equal')
 
-# Set aspect ratio to equal for accurate representation
-ax.set_aspect('equal')
+        # Remove axes for clean output
+        ax.axis('off')
 
-# Show the plot
-plt.show()
+        # Save the plot to a buffer
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0, dpi=300)
+        plt.close(fig)
+        buf.seek(0)
+
+        # Resize the image to 128x128 and save
+        img = Image.open(buf)
+        img = img.resize((512, 512), Image.LANCZOS)
+        buf.close()
+
+        save_path = f"./datasets/{room_name}_vlm_output.png"
+        img.save(save_path)
+    except:
+        continue

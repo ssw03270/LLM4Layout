@@ -18,10 +18,10 @@ for image_path, json_path in zip(tqdm(image_paths), json_paths):
     json_data = json_data.replace("[", "[\n")
     json_data = json_data.replace("]", "\n]")
 
-    prompt = f"""
+    vlm_prompt = f"""
 1. Example Layout Description
 Look at the example layout on the left, where multiple pieces of furniture are displayed in different colors on the room’s floor plan.
-The category of individual furniture in the left example layout, the colors shown in the 3D location, width, height, depth and angle, and layout are expressed in the Json format as follows.
+The category of individual furniture in the left example layout, the colors shown in the 3D location, width, height, depth and angle(radian), and layout are expressed in the Json format as follows.
 {json_data}
 Please describe how these pieces of furniture are arranged. For instance, note any patterns in spacing (e.g., minimum distance to avoid overlap), symmetry (e.g., chairs placed evenly around a table), alignment (e.g., parallel or centered), and circulation (e.g., ensuring people can move around).
 Based on your observations, infer the design intentions or policies (e.g., keeping furniture from overlapping, maintaining symmetrical chair placement around the dining table, etc.). Summarize these in your own words.
@@ -36,7 +36,7 @@ How to arrange furniture naturally for the structure of a given new room?
 If there is any additional policy?like preserving circulation space or ensuring a certain distance from walls? please describe it.
 
 3. Layout Element Generation
-Finally, generate the actual coordinates and sizes (category, x, y, z, w, h, d, angle) for each piece of furniture, according to the design plan.
+Finally, generate the actual coordinates and sizes ("furniture", "x", "y", "z", "width", "height", "depth", "angle") for each piece of furniture, according to the design plan.
 Following is a collection of categories of available furniture.
 ["armchair", "bookshelf", "cabinet", "ceiling_lamp", "chaise_longue_sofa", "chinese_chair", "coffee_table", "console_table", "corner_side_table", "desk", "dining_chair", "dining_table", "l_shaped_sofa", "lazy_sofa", "lounge_chair", "loveseat_sofa", "multi_seat_sofa", "pendant_lamp", "round_end_table", "shelf", "stool", "tv_stand", "wardrobe", "wine_cabinet"]
 
@@ -45,18 +45,43 @@ Make sure no furniture items overlap, and confirm that the design intentions (e.
 Present the final layout in a clear format (e.g., JSON). Follow example in above:
 Please follow these three steps carefully?(1) describe the example layout and infer its design intentions, (2) outline a design plan for the new space, and (3) generate the final arrangement?so we can see your reasoning at each stage.
 """
-    output_file_name = image_path.split('\\')[-1].replace("_input.png", "") + "_output.txt"
-    response = chat(
+    vlm_response = chat(
         model='llama3.2-vision',
         messages=[
             {
                 'role': 'user',
-                'content': prompt,
+                'content': vlm_prompt,
                 'images': [image_path],
             }
         ],
     )
-    output = response.message.content
+    vlm_output = vlm_response.message.content
+
+    output_file_name = image_path.split('\\')[-1].replace("_input.png", "") + "_vlm_output.txt"
     output_file_path = os.path.join(datasets_folder, output_file_name)
     with open(output_file_path, "w", encoding="utf-8") as file:
-        file.write(output)
+        file.write(vlm_output)
+
+    llm_prompt = f"""
+The following information is the thought process you derived in the previous step. 
+Your previous thought process:
+<|{vlm_output}|>
+
+Based on this thought process, write the final layout.
+The final layout must be in the format of a list of dictionaries, where each dictionary contains the keys "furniture", "x", "y", "z", "width", "height", "depth", and "angle".
+"""
+
+    llm_response = chat(
+        model='llama3.2',
+        messages=[
+            {
+                'role': 'user',
+                'content': llm_prompt,
+            },
+        ])
+    llm_output = llm_response.message.content
+
+    output_file_name = image_path.split('\\')[-1].replace("_input.png", "") + "_llm_output.txt"
+    output_file_path = os.path.join(datasets_folder, output_file_name)
+    with open(output_file_path, "w", encoding="utf-8") as file:
+        file.write(llm_output)
