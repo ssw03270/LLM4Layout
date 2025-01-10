@@ -172,6 +172,7 @@ cython_debug/
 
 .idea
 datasets
+outputs
 checkpoint
 *.bin
 *.pkl

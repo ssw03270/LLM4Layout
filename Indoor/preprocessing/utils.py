@@ -308,8 +308,8 @@ def generate_polygons_image(room_polygon, object_polygons, layout, stats, draw_t
     buf.close()
     return img_array
 
-def save_image(image_array, file_name):
-    save_path = f"../models/ollama/datasets/{file_name}.png"
+def save_image(image_array, file_name, save_path):
+    save_path = f"{save_path}/{file_name}.png"
     image_array.save(save_path)
 
 def closest_color(hex_color):
@@ -365,7 +365,7 @@ def layout_to_json(layout, stats):
 
     return json_output
 
-def save_json(json_output, file_name):
-    save_path = f"../models/ollama/datasets/{file_name}.json"
+def save_json(json_output, file_name, save_path):
+    save_path = f"{save_path}/{file_name}.json"
     with open(save_path, "w", encoding="utf-8") as f:
         f.write(json_output)
