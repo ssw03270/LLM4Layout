@@ -7,7 +7,7 @@ from shapely.geometry import Polygon
 import pyproj
 from pyproj import CRS
 
-from Urban.utils import get_bbox_polygon, move_polygon_to_center
+from Urban.data_preprocessing.utils import get_bbox_polygon, move_polygon_to_center
 
 def get_utm_crs(lon, lat):
     utm_zone = int((lon + 180) / 6) + 1

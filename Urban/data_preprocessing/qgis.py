@@ -120,11 +120,19 @@ pkl_file_paths = glob.glob(os.path.join(dataset_dir_path, '*.pkl'), recursive=Tr
 # (C) pkl 파일을 하나씩 읽어서 처리
 for file_path in tqdm(pkl_file_paths, desc="Processing PKL files"):
     try:
+        output_path = file_path.replace("pkl_dataset", "image_dataset\\satellite_image")
+        output_path = output_path.replace("_blk_information_dict.pkl", "_google_satellite_image.png")
+
+        # 이미 존재한다면(이미 처리했다면) 스킵할 수도 있음
+        if os.path.exists(output_path):
+            continue
+
         with open(file_path, 'rb') as f:
             data = pickle.load(f)
             epsg3857_cropping_region = data["epsg3857_cropping_region"]
             urban_name = data["urban_name"]
             data_idx = data["data_idx"]
+
     except Exception as e:
         print(f"Error loading {file_path}: {e}")
         continue
@@ -132,10 +140,6 @@ for file_path in tqdm(pkl_file_paths, desc="Processing PKL files"):
     # 출력 파일명 생성
     file_name = f"{urban_name}_{data_idx}_google_satellite_image.png"
     output_path = os.path.join(output_dir_path, file_name)
-
-    # 이미 존재한다면(이미 처리했다면) 스킵할 수도 있음
-    # if os.path.exists(output_path):
-    #     continue
 
     # (D) 단일 bbox에 대해 export 수행
     export_one_bbox_3857(
