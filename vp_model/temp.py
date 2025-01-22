@@ -1,4 +1,9 @@
+from dotenv import load_dotenv
 import os
+
+load_dotenv()  # .env 파일 로드
+token = os.getenv("HUGGINGFACE_TOKEN")
+
 import glob
 from tqdm import tqdm
 
@@ -7,7 +12,7 @@ import torch
 
 from PIL import Image
 
-vlm = MllamaForConditionalGeneration.from_pretrained("meta-llama/Llama-3.2-11B-Vision-Instruct", device_map="auto", torch_dtype=torch.bfloat16)
+vlm = MllamaForConditionalGeneration.from_pretrained("meta-llama/Llama-3.2-11B-Vision-Instruct", device_map="auto", torch_dtype=torch.bfloat16, token=token)
 processor = AutoProcessor.from_pretrained("meta-llama/Llama-3.2-11B-Vision-Instruct")
 
 messages = [
