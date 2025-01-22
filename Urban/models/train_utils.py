@@ -62,6 +62,8 @@ class UrbanModel(nn.Module):
         generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,
                                                      clean_up_tokenization_spaces=False)
 
+        return generated_text
+
 def build_model(args):
     model = UrbanModel(args)
     return model
