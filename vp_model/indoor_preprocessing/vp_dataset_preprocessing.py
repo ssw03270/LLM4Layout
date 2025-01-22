@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 
 import json
 import numpy as np
@@ -110,28 +111,93 @@ def center_and_translate(furnitures, floor):
 
     return translated_furnitures, translated_floor
 
-def visualize_polygons(polygons, floor, view_bound):
+def compute_text_offset(current_polygon, other_polygons, offset_distance=0.5):
+    """
+    현재 폴리곤이 다른 폴리곤들과 겹치는 경우,
+    단, 겹치는 폴리곤이 현재 폴리곤보다 작을 경우에만,
+    겹치는 모든 (더 작은) 폴리곤의 중심으로부터 멀어지는 방향의 벡터 합산
+    (정규화 후 offset_distance 만큼의 이동)을 반환한다.
+    """
+    current_center = np.array([current_polygon.centroid.x, current_polygon.centroid.y])
+    displacement = np.array([0.0, 0.0])
+    count = 0
+
+    for other in other_polygons:
+        # 자기 자신은 제외
+        if current_polygon == other:
+            continue
+        # 현재 폴리곤보다 작은(면적이 작은) 폴리곤만 고려
+        if current_polygon.area <= other.area:
+            continue
+
+        # 폴리곤 간 겹침이 발생하는지 확인 (경계 포함)
+        if current_polygon.intersects(other):
+            other_center = np.array([other.centroid.x, other.centroid.y])
+            diff = current_center - other_center  # 다른 폴리곤 중심으로부터 현재 중심의 방향
+            norm = np.linalg.norm(diff)
+            # 두 중심이 너무 가까워 0이 되는 경우 회피
+            if norm > 1e-6:
+                displacement += diff / norm
+                count += 1
+
+    if count > 0:
+        # 평균 displacement 방향 구하기
+        avg_disp = displacement / count
+        norm = np.linalg.norm(avg_disp)
+        if norm > 1e-6:
+            # offset_distance 만큼 이동시키기
+            offset = (avg_disp / norm) * offset_distance
+            return offset
+    # 겹치는 (더 작은) 폴리곤이 없으면, 기본적으로 0 offset
+    return np.array([0.0, 0.0])
+
+
+def visualize_polygons(polygons, floor, class_label_texts, class_label_indices, view_bound):
     """
     Shapely Polygon 리스트를 시각화하는 함수.
 
     Args:
         polygons (list[Polygon]): Shapely Polygon 객체 리스트.
+        floor (Polygon): 바닥면을 나타내는 Shapely Polygon.
+        class_label_texts (list[str]): 각 폴리곤에 대응하는 클래스 레이블 텍스트.
+        class_label_indices (list[int]): 각 폴리곤에 대응하는 클래스 레이블 인덱스.
+        view_bound (tuple): 시각화 범위를 (minx, maxx, miny, maxy) 형태로 지정.
     """
-    fig, ax = plt.subplots(figsize=(8, 8))
+    n_classes = 30
+    cmap = plt.cm.get_cmap('nipy_spectral', n_classes)
+    color_palette = [cmap(i) for i in range(n_classes)]
 
-    x, y = floor.exterior.xy
-    ax.plot(x, y, label="Floor", color="black")
+    fig, ax = plt.subplots(figsize=(2.56, 2.56), dpi=100)
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-    for polygon in polygons:
-        x, y = polygon.exterior.xy  # 폴리곤 외곽선의 x, y 좌표
-        ax.plot(x, y, label="Polygon")  # 외곽선 그리기
-        ax.fill(x, y, alpha=0.4)  # 투명한 색으로 채우기
+    # 바닥면 그리기
+    x_floor, y_floor = floor.exterior.xy
+    ax.plot(x_floor, y_floor, label="Floor", color="black")
+
+    # 텍스트 위치 겹침 해결을 위해 각 폴리곤에 대해 offset 적용
+    for polygon, label_text, label_idx in zip(polygons, class_label_texts, class_label_indices):
+        x_poly, y_poly = polygon.exterior.xy  # 폴리곤 외곽선의 x, y 좌표
+        color = color_palette[label_idx]  # 색상 선택
+
+        ax.plot(x_poly, y_poly, color=color)  # 외곽선 그리기
+        ax.fill(x_poly, y_poly, color=color, alpha=0.4)  # 채우기
+
+        # 폴리곤 중심 계산
+        centroid_x, centroid_y = polygon.centroid.x, polygon.centroid.y
+
+        # 다른 폴리곤들과 겹치는 경우 오프셋 적용
+        offset = compute_text_offset(polygon, polygons)
+        new_text_pos = (centroid_x + offset[0], centroid_y + offset[1])
+
+        # 텍스트 내의 "_"를 줄바꿈 문자로 대체
+        label_text_modified = label_text.replace("_", "\n")
+        ax.text(new_text_pos[0], new_text_pos[1], label_text_modified,
+                color="black", ha="center", va="center", fontsize=7, fontweight="bold")
 
     # 시각화 범위 설정
     minx, maxx, miny, maxy = view_bound
-    print(view_bound)
-    ax.set_xlim(minx - 0.5, maxx + 0.5)
-    ax.set_ylim(miny - 0.5, maxy + 0.5)
+    ax.set_xlim(minx - 0.1, maxx + 0.1)
+    ax.set_ylim(miny - 0.1, maxy + 0.1)
 
     ax.set_aspect('equal')
     ax.invert_yaxis()  # y축 뒤집기
@@ -139,7 +205,7 @@ def visualize_polygons(polygons, floor, view_bound):
 
     return fig
 
-dataset_folder = "F:\\Indoor\\InstructScene"
+dataset_folder = "D:\\Indoor\\InstructScene"
 room_types = ["threed_front_bedroom"]
 
 rendered_image_file_name = "blender_rendered_scene_256\\topdown.png"
@@ -158,9 +224,10 @@ if not os.path.exists(os.path.join(output_folder, layout_output_path)):
 for room_type in room_types:
     dataset_path = os.path.join(dataset_folder, room_type)
     dataset_stats_file_path = os.path.join(dataset_path, dataset_stats_file_name)
+
     with open(dataset_stats_file_path, "r") as file:
         dataset_stats = json.load(file)
-        class_labels_text = dataset_stats["class_labels"]
+        class_labels_book = dataset_stats["class_labels"]
         minx, maxx, minz, maxz = (dataset_stats["bounds_sizes"][0], dataset_stats["bounds_sizes"][3],
                                   dataset_stats["bounds_sizes"][2], dataset_stats["bounds_sizes"][5])
         # 각 방향의 크기 계산
@@ -178,7 +245,7 @@ for room_type in room_types:
         print(f"Path does not exist: {dataset_path}")
         continue
 
-    for subfolder in subfolders:
+    for subfolder in tqdm(subfolders):
         data_folder = os.path.join(dataset_path, subfolder)
         rendered_image_file_path = os.path.join(data_folder, rendered_image_file_name)
         layout_npz_file_path = os.path.join(data_folder, layout_npz_file_name)
@@ -188,7 +255,8 @@ for room_type in room_types:
         rendered_image_file.save(rendered_image_output_path)
 
         layout_npz = np.load(layout_npz_file_path)
-        class_labels = [class_labels_text[label] for label in np.argmax(layout_npz["class_labels"], axis=1)]
+        class_label_indices = np.argmax(layout_npz["class_labels"], axis=1)
+        class_label_texts = [class_labels_book[label] for label in class_label_indices]
         translations = layout_npz["translations"]
         sizes = layout_npz["sizes"]
         angles = layout_npz["angles"]
@@ -197,8 +265,7 @@ for room_type in room_types:
         floor = get_combined_bounding_box(furnitures)
         furnitures, floor = center_and_translate(furnitures, floor)
 
-        layout_fig = visualize_polygons(furnitures, floor, view_bound)
-        layout_output_path = os.path.join(output_folder, layout_output_path, f"{subfolder}_layout.png")
-        layout_fig.savefig(layout_output_path, bbox_inches="tight")
-
-        exit()
+        layout_fig = visualize_polygons(furnitures, floor, class_label_texts, class_label_indices, view_bound)
+        layout_image_output_path = os.path.join(output_folder, layout_output_path, f"{subfolder}_layout.png")
+        layout_fig.savefig(layout_image_output_path, bbox_inches="tight", dpi=100, pad_inches=0)
+        plt.close(layout_fig)  # 해당 figure 닫기

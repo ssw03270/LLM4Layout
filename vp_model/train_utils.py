@@ -22,15 +22,50 @@ class UrbanModel(nn.Module):
 
         self.vp = ExpansiveVisualPrompt(pad_size=560, target_size=500)
 
+        self.system_prompt = """
+You are an expert visual reasoning assistant. 
+You have the ability to observe an image and describe it in detail. 
+Then, you will answer questions about the image, step by step, to demonstrate thorough understanding and reasoning.
+"""
+        self.user_prompt = """
+[1] First, describe the entire scene you observe in the image. 
+Include details about the space, objects, furniture, and any other notable elements.
+
+[2] Next, explain your reasoning step by step. For each significant item in the scene, state what it is, where it is located, and how it relates to other objects. 
+(Feel free to provide a chain-of-thought that outlines how you identify each object and interpret its position.)
+
+[3] Answer the following specific questions:
+   - What kind of room or space does this appear to be?
+   - How many distinct pieces of furniture can you see?
+   - Where are they positioned relative to each other?
+   - Does the arrangement suggest any particular use case or activity?
+   - Are there any notable design considerations, such as color scheme, user flow, or accessibility?
+
+[4] Finally, summarize your observations in a concise paragraph. 
+Include any important details a designer or planner might need to know about this space.
+"""
     def forward(self, source_image, target_image):
-        prompt = ["<|image|>What is this image?"] * source_image.size(0)
+        messages = [
+            {
+                "role": "system",
+                "content": self.system_prompt
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": self.user_prompt}
+                ]
+            }
+        ] * source_image.size(0)
+
         images = []
         for i, image in enumerate(target_image):
             images.append(image)
 
         inputs = self.processor(
             images=images,
-            text=prompt,
+            text=messages,
             add_special_tokens=False,
             return_tensors="pt"
         ).to(self.args["device"])
@@ -56,7 +91,7 @@ class UrbanModel(nn.Module):
         inputs["pixel_values"] = self.vp(inputs["pixel_values"])
 
         # outputs = self.vlm(**inputs)
-        output = self.vlm.generate(**inputs, temperature=0.7, top_p=0.9, max_new_tokens=512)
+        output = self.vlm.generate(**inputs, max_new_tokens=1024)
         prompt_len = inputs.input_ids.shape[-1]
         generated_ids = output[:, prompt_len:]
         generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,

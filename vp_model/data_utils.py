@@ -24,20 +24,17 @@ class LayoutDataset(Dataset):
         return len(self.data_paths)
 
 def get_dataset_paths(dataset_folder):
-    real_image_folder = os.path.join(dataset_folder, "real_image")
-    target_image_folder = os.path.join(dataset_folder, "target_image")
-    text_description_folder = os.path.join(dataset_folder, "text_description")
+    real_image_folder = os.path.join(dataset_folder, "real_images")
+    target_image_folder = os.path.join(dataset_folder, "target_images")
 
     real_image_paths = glob.glob(os.path.join(real_image_folder, "*.png"))
     target_image_paths = glob.glob(os.path.join(target_image_folder, "*.png"))
-    text_description_paths = glob.glob(os.path.join(text_description_folder, "*.txt"))
 
     print("Get data folders: ", dataset_folder)
 
     dataset_paths_dict = {
         "real_image_paths": real_image_paths,
         "target_image_paths": target_image_paths,
-        "text_description_paths": text_description_paths
     }
 
     return dataset_paths_dict
@@ -45,7 +42,6 @@ def get_dataset_paths(dataset_folder):
 def split_dataset(dataset_paths_dict, train_ratio=0.7, val_ratio=0.2, test_ratio=0.1):
     real_image_paths = dataset_paths_dict["real_image_paths"]
     target_image_paths = dataset_paths_dict["target_image_paths"]
-    text_description_paths = dataset_paths_dict["text_description_paths"]
 
     total_files = len(real_image_paths)
     indices = list(range(total_files))
@@ -58,9 +54,8 @@ def split_dataset(dataset_paths_dict, train_ratio=0.7, val_ratio=0.2, test_ratio
     for i, file_idx in enumerate(indices):
         real_image_path = real_image_paths[file_idx]
         target_image_path = target_image_paths[file_idx]
-        text_description_path = text_description_paths[file_idx]
 
-        file_path_tuple = (real_image_path, target_image_path, text_description_path)
+        file_path_tuple = (real_image_path, target_image_path)
         if i < train_end:
             split_dataset_paths["train"].append(file_path_tuple)
         elif i < val_end:
