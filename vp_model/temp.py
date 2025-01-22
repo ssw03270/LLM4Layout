@@ -18,7 +18,7 @@ messages = [
 ] * 3
 input_texts = processor.apply_chat_template(messages, add_generation_prompt=True)
 
-dataset_folder = "C:\\Users\\Dobby\\Documents\\GitHub\\LLM4Layout\\vp_model\\indoor_preprocessing\\outputs\\layouts\\real_images"
+dataset_folder = "/data/ssw03270/github/LLM4Layout/vp_model/indoor_preprocessing/outputs/layouts/real_images"
 image_paths = glob.glob(os.path.join(dataset_folder, ".png"))[:3]
 
 image_list = []
