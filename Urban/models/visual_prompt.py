@@ -8,28 +8,33 @@ import torch.nn.functional as F
 import numpy as np
 
 class ExpansiveVisualPrompt(nn.Module):
-    def __init__(self, out_size, mask, init = 'zero', normalize=None):
+    def __init__(self, pad_size, target_size, init = 'randn', normalize=None):
         super(ExpansiveVisualPrompt, self).__init__()
-        assert mask.shape[0] == mask.shape[1]
-        in_size = mask.shape[0]
-        self.out_size = out_size
+        self.pad_size = pad_size
+        self.target_size = target_size
         if init == "zero":
-            self.program = torch.nn.Parameter(data=torch.zeros(3, out_size, out_size))
+            self.program = torch.nn.Parameter(data=torch.zeros(3, pad_size, pad_size))
         elif init == "randn":
-            self.program = torch.nn.Parameter(data=torch.randn(3, out_size, out_size))
+            self.program = torch.nn.Parameter(data=torch.randn(3, pad_size, pad_size))
         else:
             raise ValueError("init method not supported")
         self.normalize = normalize
 
-        self.l_pad = int((out_size-in_size+1)/2)
-        self.r_pad = int((out_size-in_size)/2)
+        self.l_pad = int((pad_size-target_size+1)/2)
+        self.r_pad = int((pad_size-target_size)/2)
 
-        mask = np.repeat(np.expand_dims(mask, 0), repeats=3, axis=0)
-        mask = torch.Tensor(mask)
+        mask = torch.zeros(3, target_size, target_size)
         self.register_buffer("mask", F.pad(mask, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=1))
 
     def forward(self, x):
+        b, t, d, c, h, w = x.shape
+        x = x.view(b * t * d, c, h, w)  # Reshape to [new_batch, channel, height, width]
+        x = F.interpolate(x, size=(self.target_size, self.target_size), mode='bilinear', align_corners=False)
+
         x = F.pad(x, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=0) + torch.sigmoid(self.program) * self.mask
+
         if self.normalize is not None:
             x = self.normalize(x)
+
+        x = x.view(b, t, d, c, self.pad_size, self.pad_size)
         return x

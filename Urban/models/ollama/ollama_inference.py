@@ -85,9 +85,18 @@ for satellite_image_path, bldg_polygon_image_path in zip(tqdm(satellite_image_pa
     image = concat_images(satellite_image_path, bldg_polygon_image_path, axis='horizontal')
     image = numpy_to_bytes(image)
     vlm_prompt = """
-    "On the left side of this image, a satellite photograph of an urban block is shown.
-    On the right side is a segmented image of the same urban block, highlighting only the boundaries of the block and the buildings within it.
-    Using this information, describe the arrangement of buildings in the urban block depicted in the image.
+Once we extract a design plan from a given urban satellite image, we want to explain the urban layout through a set of rules.
+For example, an L-shaped building can be described independently as follows 
+{"Category": "L-shaped", "x": 0.08, "y": 0.39, "z": -0.4, "width": 1.11, "height": 0.39, "angle": 1.57, 
+However, in most cases, given the boundaries of the city blocks, this can be explained as follows:
+
+'Boundaries: Rectangles, gently curved rectangles are diagonally inclined, and buildings are arranged in two rows.
+For a clear design and aesthetic, it is desirable that the building is spaced apart from the boundary at regular intervals, and that the central point of the individual building rows is soft to a degree similar to the boundary.
+Once you have roughly determined the number, type, and size of buildings that will be within the boundaries, you can establish an individual building placement strategy based on the spacing and boundaries between the buildings.
+e.g. x location of building i = (x location of the neighborest building + x location of the nearest boundary)/2'
+
+Natural language based design planning extracted above can be helpful for layout planning of urban planning in urban satellite images.
+For the given satellite image, please create a full natural language based design plan as below
     """
 
     vlm_response = chat(
@@ -103,4 +112,5 @@ for satellite_image_path, bldg_polygon_image_path in zip(tqdm(satellite_image_pa
     vlm_output = vlm_response.message.content
 
     print(vlm_output)
+    print(satellite_image_path)
     exit()
