@@ -64,7 +64,7 @@ class Model(nn.Module):
                 'meta-llama/Llama-3.2-1B'
             )
         else:
-            raise Exception('LLM model is not defined')
+            raise Exception('LLM vp_model is not defined')
 
         if self.tokenizer.eos_token:
             self.tokenizer.pad_token = self.tokenizer.eos_token

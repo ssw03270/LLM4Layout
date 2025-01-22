@@ -56,7 +56,7 @@ class UrbanModel(nn.Module):
         inputs["pixel_values"] = self.vp(inputs["pixel_values"])
 
         # outputs = self.vlm(**inputs)
-        output = self.vlm.generate(**inputs)
+        output = self.vlm.generate(**inputs, temperature=0.7, top_p=0.9, max_new_tokens=512)
         prompt_len = inputs.input_ids.shape[-1]
         generated_ids = output[:, prompt_len:]
         generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,

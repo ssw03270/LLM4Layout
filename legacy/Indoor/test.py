@@ -19,7 +19,7 @@ from accelerate import Accelerator  # 추가
 def parse_args():
     parser = argparse.ArgumentParser(description="Test a trained Model checkpoint with a test dataloader.")
     parser.add_argument("--checkpoint_path", type=str, default="./checkpoint/model_checkpoint_epoch_10.pth",
-                        help="Path to the saved model checkpoint .pth file")
+                        help="Path to the saved vp_model checkpoint .pth file")
     parser.add_argument("--root_dir", type=str, default="./datasets/threed_front_diningroom",
                         help="Root directory for test dataset")
     parser.add_argument("--batch_size", type=int, default=1,

@@ -1,0 +1,78 @@
+import os
+import glob
+import random
+
+import numpy as np
+from PIL import Image
+
+from torch.utils.data import Dataset, DataLoader
+from torchvision.transforms import ToTensor
+
+class LayoutDataset(Dataset):
+    def __init__(self, split_dataset_paths, dataset_type):
+        self.data_paths = split_dataset_paths[dataset_type]
+
+    def __getitem__(self, index):
+        satellite_image_file_path, bldg_polygon_image_file_path = self.data_paths[index]
+
+        satellite_image = Image.open(satellite_image_file_path).convert("RGB")
+        bldg_polygon_image = Image.open(bldg_polygon_image_file_path).convert("RGB")
+
+        return np.array(satellite_image), np.array(bldg_polygon_image)
+
+    def __len__(self):
+        return len(self.data_paths)
+
+def get_dataset_paths(dataset_folder):
+    real_image_folder = os.path.join(dataset_folder, "real_image")
+    target_image_folder = os.path.join(dataset_folder, "target_image")
+    text_description_folder = os.path.join(dataset_folder, "text_description")
+
+    real_image_paths = glob.glob(os.path.join(real_image_folder, "*.png"))
+    target_image_paths = glob.glob(os.path.join(target_image_folder, "*.png"))
+    text_description_paths = glob.glob(os.path.join(text_description_folder, "*.txt"))
+
+    print("Get data folders: ", dataset_folder)
+
+    dataset_paths_dict = {
+        "real_image_paths": real_image_paths,
+        "target_image_paths": target_image_paths,
+        "text_description_paths": text_description_paths
+    }
+
+    return dataset_paths_dict
+
+def split_dataset(dataset_paths_dict, train_ratio=0.7, val_ratio=0.2, test_ratio=0.1):
+    real_image_paths = dataset_paths_dict["real_image_paths"]
+    target_image_paths = dataset_paths_dict["target_image_paths"]
+    text_description_paths = dataset_paths_dict["text_description_paths"]
+
+    total_files = len(real_image_paths)
+    indices = list(range(total_files))
+    random.shuffle(indices)
+
+    train_end = int(total_files * train_ratio)
+    val_end = train_end + int(total_files * val_ratio)
+
+    split_dataset_paths = {"train": [], "val": [], "test": []}
+    for i, file_idx in enumerate(indices):
+        real_image_path = real_image_paths[file_idx]
+        target_image_path = target_image_paths[file_idx]
+        text_description_path = text_description_paths[file_idx]
+
+        file_path_tuple = (real_image_path, target_image_path, text_description_path)
+        if i < train_end:
+            split_dataset_paths["train"].append(file_path_tuple)
+        elif i < val_end:
+            split_dataset_paths["val"].append(file_path_tuple)
+        else:
+            split_dataset_paths["test"].append(file_path_tuple)
+
+    print("total files: ", total_files, ", train_length: ", len(split_dataset_paths["train"]),
+          ", val_length: ", len(split_dataset_paths["val"]), ", test_length: ", len(split_dataset_paths["test"]),
+          ", dict_keys: ", split_dataset_paths.keys())
+
+    return split_dataset_paths
+
+def get_dataloader(dataset, args, shuffle=True):
+    return DataLoader(dataset, batch_size=args["batch_size"], shuffle=shuffle)

@@ -153,23 +153,23 @@ def parse_args():
     parser.add_argument("--fix_seed", type=int, default=1,
                         help="Random seed for reproducibility")
     parser.add_argument("--patch_size", type=int, default=16,
-                        help="Patch size for the model")
+                        help="Patch size for the vp_model")
     parser.add_argument("--stride", type=int, default=8,
-                        help="Stride for the model")
+                        help="Stride for the vp_model")
     parser.add_argument("--d_llm", type=int, default=3072,
-                        help="Dimension of the LLM model")
+                        help="Dimension of the LLM vp_model")
     parser.add_argument("--image_size", type=int, default=256,
-                        help="Image size to use for the model input")
+                        help="Image size to use for the vp_model input")
     parser.add_argument("--pred_len", type=int, default=25,
                         help="Length of the prediction")
     parser.add_argument("--llm_model", type=str, default="LLAMA-3.2-3B",
-                        help="Which LLM model to use")
+                        help="Which LLM vp_model to use")
     parser.add_argument("--llm_layers", type=int, default=28,
-                        help="Number of layers in the LLM model")
+                        help="Number of layers in the LLM vp_model")
     parser.add_argument("--dropout", type=float, default=0.1,
                         help="Dropout rate")
     parser.add_argument("--d_model", type=int, default=32,
-                        help="Dimension of the model encoder/decoder hidden size")
+                        help="Dimension of the vp_model encoder/decoder hidden size")
     parser.add_argument("--d_ff", type=int, default=128,
                         help="Dimension of the feedforward layer")
     parser.add_argument("--n_heads", type=int, default=8,

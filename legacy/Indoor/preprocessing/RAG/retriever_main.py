@@ -68,7 +68,7 @@ def encode_dataset(dataset, dataloader, model, device):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Inference for the Transformer model.')
+    parser = argparse.ArgumentParser(description='Inference for the Transformer vp_model.')
     parser.add_argument("--root_dir", type=str, default="../../datasets/threed_front_diningroom",
                         help="Dataset root directory")
     args = parser.parse_args()
