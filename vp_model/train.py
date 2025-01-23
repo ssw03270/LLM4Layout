@@ -48,7 +48,9 @@ if __name__ == "__main__":
             optimizer.step()
 
             epoch_train_loss += loss.item()
-            progress_bar.set_postfix({"loss": loss.item()})
+
+            if accelerator.is_main_process:
+                progress_bar.set_postfix({"loss": loss.item()})
 
         avg_train_loss = accelerator.gather(torch.tensor(epoch_train_loss)).sum() / len(train_dataloader)
         train_losses.append(avg_train_loss)
@@ -66,10 +68,10 @@ if __name__ == "__main__":
 
         print(f"Epoch {epoch+1}/{args['num_epochs']} - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
 
-    if accelerator.is_main_process:
-        # 모델 저장
-        save_dir = args["save_dir"]
-        os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"{args['model_name']}_vp.pth")
-        torch.save(model.vp.state_dict(), save_path)
-        print(f"Model vp saved to {save_path}")
+        if accelerator.is_main_process:
+            # 모델 저장
+            save_dir = args["save_dir"]
+            os.makedirs(save_dir, exist_ok=True)
+            save_path = os.path.join(save_dir, f"{args['model_name']}_vp_{epoch}.pth")
+            torch.save(model.vp.state_dict(), save_path)
+            print(f"Model vp saved to {save_path}")
