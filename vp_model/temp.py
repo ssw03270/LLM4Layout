@@ -19,8 +19,8 @@ messages = [
 ] * 3
 input_texts = processor.apply_chat_template(messages, add_generation_prompt=True)
 
-dataset_folder = "./indoor_preprocessing/outputs/layouts/real_images"
-image_paths = glob.glob(os.path.join(dataset_folder, ".png"))[:3]
+dataset_folder = "./indoor_preprocessing/outputs/layouts/real_images/"
+image_paths = glob.glob(os.path.join(dataset_folder, "*.png"))[:3]
 
 image_list = []
 for image_path in tqdm(image_paths):
