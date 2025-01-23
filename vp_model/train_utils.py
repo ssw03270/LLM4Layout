@@ -108,9 +108,30 @@ Include any important details a designer or planner might need to know about thi
         ).to(device)
 
         return real_inputs, target_inputs
+
+    def generate(self, real_inputs, target_inputs):
+        prompt_len = real_inputs.input_ids.shape[-1]
+
+        real_outputs = self.vlm.generate(**real_inputs, max_new_tokens=1024)
+        real_ids = real_outputs[:, prompt_len:]
+        real_text = self.processor.batch_decode(real_ids, skip_special_tokens=True,
+                                                clean_up_tokenization_spaces=False)
+
+        target_outputs = self.vlm.generate(**target_inputs, max_new_tokens=1024)
+        target_ids = target_outputs[:, prompt_len:]
+        target_text = self.processor.batch_decode(target_ids, skip_special_tokens=True,
+                                                  clean_up_tokenization_spaces=False)
+
+        return real_text, target_text
 def build_model(args):
     vlm_model = UrbanModel(args["model_name"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
+    return vlm_model, vp_model
+
+def build_test_model(args, model_path):
+    vlm_model = UrbanModel(args["model_name"])
+    vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
+    vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
 
 def get_optimizer(model, args):
@@ -129,3 +150,11 @@ def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optim
     )
 
     return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
+
+def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, scheduler):
+    accelerator = Accelerator()
+    test_dataloader, vlm_model, vp_model, optimizer, scheduler = accelerator.prepare(
+        test_dataloader, vlm_model, vp_model, optimizer, scheduler
+    )
+
+    return test_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
