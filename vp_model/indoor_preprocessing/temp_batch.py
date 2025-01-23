@@ -12,13 +12,19 @@ vlm = MllamaForConditionalGeneration.from_pretrained("meta-llama/Llama-3.2-11B-V
 processor = AutoProcessor.from_pretrained("meta-llama/Llama-3.2-11B-Vision-Instruct")
 
 prompt = """
-<|begin_of_text|><|start_header_id|>user<|end_header_id|>
+<|begin_of_text|>
+
+<|start_header_id|>system<|end_header_id|>
+You are a mathematician. Therefore, all explanations are based on mathematics.<|eot_id|>
+
+<|start_header_id|>user<|end_header_id|>
 <|image|>what is this image?<|eot_id|>
+
 <|start_header_id|>assistant<|end_header_id|>
 """
 prompts = [prompt] * 3
 
-# dataset_folder = "./indoor_preprocessing/outputs/layouts/real_images/"
+# dataset_folder = "./outputs/layouts/real_images/"
 # image_paths = glob.glob(os.path.join(dataset_folder, "*.png"))[:3]
 
 image_paths = ["./car.png", "./apple.png", "./robot.png"]
