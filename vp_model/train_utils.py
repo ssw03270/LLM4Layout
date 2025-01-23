@@ -50,30 +50,7 @@ Include any important details a designer or planner might need to know about thi
 
 <|start_header_id|>assistant<|end_header_id|>
 """
-    def forward(self, real_images, target_images, device):
-        prompts = [self.prompt] * real_images.size(0)
-        real_image_list = []
-        target_image_list = []
-        for real_image, target_image in zip(real_images, target_images):
-            real_image_list.append([real_image])
-            target_image_list.append([target_image])
-
-        real_inputs = self.processor(
-            images=real_image_list,
-            text=prompts,
-            add_special_tokens=False,
-            return_tensors="pt"
-        ).to(device)
-
-        target_inputs = self.processor(
-            images=target_image_list,
-            text=prompts,
-            add_special_tokens=False,
-            return_tensors="pt"
-        ).to(device)
-
-        target_inputs["pixel_values"] = self.vp(target_inputs["pixel_values"])
-
+    def forward(self, real_inputs, target_inputs):
         # outputs = self.vlm(**inputs)
         # real_outputs = self.vlm.generate(**real_inputs, max_new_tokens=1024)
         # target_outputs = self.vlm.generate(**target_inputs, max_new_tokens=1024)
@@ -110,14 +87,41 @@ Include any important details a designer or planner might need to know about thi
         # target_generated_text = self.processor.batch_decode(target_output)
         #
         # return real_generated_text, target_generated_text
+    def get_inputs(self, real_images, target_images, device):
+        prompts = [self.prompt] * real_images.size(0)
+        real_image_list = []
+        target_image_list = []
+        for real_image, target_image in zip(real_images, target_images):
+            real_image_list.append([real_image])
+            target_image_list.append([target_image])
 
+        real_inputs = self.processor(
+            images=real_image_list,
+            text=prompts,
+            add_special_tokens=False,
+            return_tensors="pt"
+        ).to(device)
+
+        target_inputs = self.processor(
+            images=target_image_list,
+            text=prompts,
+            add_special_tokens=False,
+            return_tensors="pt"
+        ).to(device)
+
+        return real_inputs, target_inputs
 def build_model(args):
-    model = UrbanModel(args["model_name"])
-    return model
+    vlm_model = UrbanModel(args["model_name"])
+    vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
+    return vlm_model, vp_model
 
 def get_optimizer(model, args):
     optimizer = torch.optim.Adam(model.parameters(), lr=args["learning_rate"])
     return optimizer
+
+def get_scheduler(optimizer, args):
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * args["epoch"]), int(0.72 * args["epoch"])], gamma=0.1)
+    return scheduler
 
 def get_accelerator(train_dataloader, val_dataloader, model, optimizer):
     accelerator = Accelerator()

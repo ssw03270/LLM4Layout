@@ -22,11 +22,12 @@ if __name__ == "__main__":
     train_dataloader = data_utils.get_dataloader(train_dataset, args, shuffle=True)
     val_dataloader = data_utils.get_dataloader(val_dataset, args, shuffle=False)
 
-    model = train_utils.build_model(args)
-    optimizer = train_utils.get_optimizer(model, args)
+    vlm_model, vp_model = train_utils.build_model(args)
+    optimizer = train_utils.get_optimizer(vp_model, args)
+    scheduler = train_utils.get_scheduler(optimizer, args)
 
-    train_dataloader, val_dataloader, model, optimizer, accelerator = train_utils.get_accelerator(
-        train_dataloader, val_dataloader, model, optimizer)
+    train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator = train_utils.get_accelerator(
+        train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler)
     device = accelerator.device
 
     if accelerator.is_main_process:
@@ -38,25 +39,28 @@ if __name__ == "__main__":
             name=wandb_name,  # Optional: Name your run
             save_code=True                # Optional: Save your code with the run
         )
-        wandb.watch(model, log="all")
+        wandb.watch(vp_model, log="all")
 
     # 학습 및 검증 손실 기록을 위한 리스트
     train_losses = []
     val_losses = []
 
+    vlm_model.eval()
     for epoch in range(args["num_epochs"]):
-        model.train()
+        vp_model.train()
         epoch_train_loss = 0.0
         if accelerator.is_main_process:
-            progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{args['num_epochs']}")
+            train_progress_bar = tqdm(train_dataloader, desc=f"Train Epoch {epoch + 1}/{args['num_epochs']}")
         else:
-            progress_bar = train_dataloader
+            train_progress_bar = train_dataloader
 
-        for real_images, target_images in progress_bar:
+        for real_images, target_images in train_progress_bar:
             optimizer.zero_grad()
 
             # 순전파
-            loss = model(real_images, target_images, device)
+            real_inputs, target_inputs = vlm_model.get_inputs(real_images, target_images, device)
+            target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
+            loss = vlm_model(real_inputs, target_inputs, device)
 
             # 역전파
             accelerator.backward(loss)
@@ -65,20 +69,33 @@ if __name__ == "__main__":
             epoch_train_loss += loss.item()
 
             if accelerator.is_main_process:
-                progress_bar.set_postfix({"loss": loss.item()})
+                train_progress_bar.set_postfix({"loss": loss.item()})
+
+        scheduler.step()
 
         avg_train_loss_tensor = torch.tensor(epoch_train_loss, device=device)
         gathered_train_loss = accelerator.gather(avg_train_loss_tensor).sum() / len(train_dataloader)
         avg_train_loss = gathered_train_loss.item()
         train_losses.append(avg_train_loss)
 
+        if accelerator.is_main_process:
+            val_progress_bar = tqdm(val_dataloader, desc=f"Val Epoch {epoch + 1}/{args['num_epochs']}")
+        else:
+            val_progress_bar = val_dataloader
+
         # 검증 단계
-        model.eval()
+        vp_model.eval()
         epoch_val_loss = 0.0
         with torch.no_grad():
-            for real_images, target_images in val_dataloader:
-                loss = model(real_images, target_images, device)
+            for real_images, target_images in val_progress_bar:
+                real_inputs, target_inputs = vlm_model.get_inputs(real_images, target_images, device)
+                target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
+                loss = vlm_model(real_inputs, target_inputs, device)
+
                 epoch_val_loss += loss.item()
+
+                if accelerator.is_main_process:
+                    val_progress_bar.set_postfix({"loss": loss.item()})
 
         avg_val_loss_tensor = torch.tensor(epoch_val_loss, device=device)
         gathered_val_loss = accelerator.gather(avg_val_loss_tensor).sum() / len(val_dataloader)
@@ -100,7 +117,7 @@ if __name__ == "__main__":
             os.makedirs(save_dir, exist_ok=True)
             model_name = args['model_name'].replace('/', '_')
             save_path = os.path.join(save_dir, f"{model_name}_vp_{epoch}.pth")
-            torch.save(accelerator.unwrap_model(model).vp.state_dict(), save_path)
+            torch.save(accelerator.unwrap_model(vp_model).state_dict(), save_path)
             print(f"Model vp saved to {save_path}")
 
     if accelerator.is_main_process:
