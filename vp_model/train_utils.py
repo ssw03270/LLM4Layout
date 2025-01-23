@@ -22,13 +22,11 @@ class UrbanModel(nn.Module):
 
         self.vp = ExpansiveVisualPrompt(pad_size=560, target_size=500)
 
-        system_prompt = """
-You are an expert visual reasoning assistant. 
+        system_prompt = """You are an expert visual reasoning assistant. 
 You have the ability to observe an image and describe it in detail. 
-Then, you will answer questions about the image, step by step, to demonstrate thorough understanding and reasoning.
-"""
-        user_prompt = """
-[1] First, describe the entire scene you observe in the image. 
+Then, you will answer questions about the image, step by step, to demonstrate thorough understanding and reasoning."""
+
+        user_prompt = """[1] First, describe the entire scene you observe in the image. 
 Include details about the space, objects, furniture, and any other notable elements.
 
 [2] Next, explain your reasoning step by step. For each significant item in the scene, state what it is, where it is located, and how it relates to other objects. 
@@ -42,8 +40,8 @@ Include details about the space, objects, furniture, and any other notable eleme
    - Are there any notable design considerations, such as color scheme, user flow, or accessibility?
 
 [4] Finally, summarize your observations in a concise paragraph. 
-Include any important details a designer or planner might need to know about this space.
-"""
+Include any important details a designer or planner might need to know about this space."""
+
         self.prompt = f"""
 <|begin_of_text|>
 
@@ -69,7 +67,7 @@ Include any important details a designer or planner might need to know about thi
             return_tensors="pt"
         ).to(self.args["device"])
 
-        inputs["pixel_values"] = self.vp(inputs["pixel_values"])
+        # inputs["pixel_values"] = self.vp(inputs["pixel_values"])
 
         # outputs = self.vlm(**inputs)
         output = self.vlm.generate(**inputs, max_new_tokens=1024)
