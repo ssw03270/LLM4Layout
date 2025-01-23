@@ -8,10 +8,8 @@ from accelerate import Accelerator
 from visual_prompt import ExpansiveVisualPrompt
 
 class UrbanModel(nn.Module):
-    def __init__(self, args):
+    def __init__(self, model_name):
         super(UrbanModel, self).__init__()
-        self.args = args
-        model_name = args["model_name"]
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
         self.vlm.tie_weights()
         for param in self.vlm.parameters():
@@ -52,7 +50,7 @@ Include any important details a designer or planner might need to know about thi
 
 <|start_header_id|>assistant<|end_header_id|>
 """
-    def forward(self, real_images, target_images):
+    def forward(self, real_images, target_images, device):
         prompts = [self.prompt] * real_images.size(0)
         real_image_list = []
         target_image_list = []
@@ -65,14 +63,14 @@ Include any important details a designer or planner might need to know about thi
             text=prompts,
             add_special_tokens=False,
             return_tensors="pt"
-        ).to(self.args["device"])
+        ).to(device)
 
         target_inputs = self.processor(
             images=target_image_list,
             text=prompts,
             add_special_tokens=False,
             return_tensors="pt"
-        ).to(self.args["device"])
+        ).to(device)
 
         target_inputs["pixel_values"] = self.vp(target_inputs["pixel_values"])
 
@@ -114,7 +112,7 @@ Include any important details a designer or planner might need to know about thi
         # return real_generated_text, target_generated_text
 
 def build_model(args):
-    model = UrbanModel(args)
+    model = UrbanModel(args["model_name"])
     return model
 
 def get_optimizer(model, args):
