@@ -67,7 +67,11 @@ if __name__ == "__main__":
             if accelerator.is_main_process:
                 progress_bar.set_postfix({"loss": loss.item()})
 
-        avg_train_loss = accelerator.gather(torch.tensor(epoch_train_loss)).sum() / len(train_dataloader)
+            break
+
+        avg_train_loss_tensor = torch.tensor(epoch_train_loss, device=device)
+        gathered_train_loss = accelerator.gather(avg_train_loss_tensor).sum() / len(train_dataloader)
+        avg_train_loss = gathered_train_loss.item()
         train_losses.append(avg_train_loss)
 
         # 검증 단계
@@ -78,7 +82,9 @@ if __name__ == "__main__":
                 loss = model(real_images, target_images, device)
                 epoch_val_loss += loss.item()
 
-        avg_val_loss = accelerator.gather(torch.tensor(epoch_val_loss)).sum() / len(val_dataloader)
+        avg_val_loss_tensor = torch.tensor(epoch_val_loss, device=device)
+        gathered_val_loss = accelerator.gather(avg_val_loss_tensor).sum() / len(val_dataloader)
+        avg_val_loss = gathered_val_loss.item()
         val_losses.append(avg_val_loss)
 
         if accelerator.is_main_process:
