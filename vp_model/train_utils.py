@@ -1,10 +1,9 @@
-# https://github.com/jaepoong/PosterLlama/blob/main/src/model/minigpt_base.py
-from torch import nn
-from transformers import MllamaForConditionalGeneration, AutoProcessor
 import torch
-from accelerate import Accelerator
+from torch import nn
+import torch.nn.functional as F
 
-import matplotlib.pyplot as plt
+from transformers import MllamaForConditionalGeneration, AutoProcessor
+from accelerate import Accelerator
 
 from visual_prompt import ExpansiveVisualPrompt
 
@@ -92,14 +91,19 @@ Include any important details a designer or planner might need to know about thi
         real_predicted_token_ids = real_outputs.logits.argmax(dim=-1)  # Shape: (batch_size, sequence_length)
         target_predicted_token_ids = target_outputs.logits.argmax(dim=-1)
 
-        real_decoded_text = self.processor.batch_decode(real_predicted_token_ids, skip_special_tokens=True)
-        target_decoded_text = self.processor.batch_decode(target_predicted_token_ids, skip_special_tokens=True)
+        loss = F.cross_entropy(
+            target_outputs.logits.view(-1, target_outputs.logits.size(-1)),  # [batch_size * sequence_length, vocab_size]
+            real_predicted_token_ids.view(-1)  # [batch_size * sequence_length]
+        )
 
-        print(real_decoded_text)
-        print(target_decoded_text)
+        # real_decoded_text = self.processor.batch_decode(real_predicted_token_ids)
+        # target_decoded_text = self.processor.batch_decode(target_predicted_token_ids)
+        # print(real_decoded_text)
+        # print(target_decoded_text)
 
         print(real_outputs.logits.shape)
         print(target_outputs.logits.shape)
+        print(loss)
         exit()
 
         # real_generated_text = self.processor.batch_decode(real_output)
