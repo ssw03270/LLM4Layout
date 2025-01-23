@@ -25,5 +25,5 @@ if __name__ == "__main__":
         for source_image, target_image in train_dataloader:
             outputs = model(source_image, target_image)
             for output in outputs:
-                print(output)
+                print("output:", output)
             exit()

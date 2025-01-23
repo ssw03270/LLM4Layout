@@ -74,9 +74,11 @@ Include any important details a designer or planner might need to know about thi
         # outputs = self.vlm(**inputs)
         output = self.vlm.generate(**inputs, max_new_tokens=1024)
         prompt_len = inputs.input_ids.shape[-1]
-        generated_ids = output[:, prompt_len:]
-        generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,
-                                                     clean_up_tokenization_spaces=False)
+        # generated_ids = output[:, prompt_len:]
+        # generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,
+        #                                              clean_up_tokenization_spaces=False)
+
+        generated_text = self.processor.batch_decode(output)
 
         return generated_text
 
