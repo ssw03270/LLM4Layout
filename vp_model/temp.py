@@ -26,6 +26,7 @@ image_list = []
 for image_path in tqdm(image_paths):
     image = Image.open(image_path)
     image_list.append(image)
+print(image_list)
 
 inputs = processor(
     image_list,
