@@ -35,6 +35,6 @@ inputs = processor(
     return_tensors="pt"
 ).to(vlm.device)
 output = vlm.generate(**inputs, max_new_tokens=1024)
-output_text = processor.batch_decode(output[:])[0]
+output_text = processor.batch_decode(output)
 
 print(output_text)
