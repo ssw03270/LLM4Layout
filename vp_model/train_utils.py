@@ -78,15 +78,16 @@ Include any important details a designer or planner might need to know about thi
         target_inputs["pixel_values"] = self.vp(target_inputs["pixel_values"])
 
         # outputs = self.vlm(**inputs)
-        real_output = self.vlm.generate(**real_inputs, max_new_tokens=1024)
-        target_output = self.vlm.generate(**target_inputs, max_new_tokens=1024)
+        real_outputs = self.vlm.generate(**real_inputs, max_new_tokens=1024)
+        target_outputs = self.vlm.generate(**target_inputs, max_new_tokens=1024)
 
         # prompt_len = real_inputs.input_ids.shape[-1]
         # generated_ids = output[:, prompt_len:]
         # generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,
         #                                              clean_up_tokenization_spaces=False)
 
-        print(real_output)
+        print(real_outputs.logits.shape)
+        print(target_outputs.logits.shape)
         exit()
 
         # real_generated_text = self.processor.batch_decode(real_output)
