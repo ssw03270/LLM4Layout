@@ -57,7 +57,7 @@ Include any important details a designer or planner might need to know about thi
         prompts = [self.prompt] * real_images.size(0)
         real_image_list = []
         target_image_list = []
-        for real_image, target_image in enumerate(real_images, target_images):
+        for real_image, target_image in zip(real_images, target_images):
             real_image_list.append([real_image])
             target_image_list.append([target_image])
 
