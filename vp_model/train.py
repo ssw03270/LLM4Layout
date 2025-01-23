@@ -101,7 +101,8 @@ if __name__ == "__main__":
             # 모델 저장
             save_dir = args["save_dir"]
             os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, f"{args['model_name']}_vp_{epoch}.pth")
+            model_name = args['model_name'].replace('/', '_')
+            save_path = os.path.join(save_dir, f"{model_name}_vp_{epoch}.pth")
             torch.save(accelerator.unwrap_model(model).vp.state_dict(), save_path)
             print(f"Model vp saved to {save_path}")
 
