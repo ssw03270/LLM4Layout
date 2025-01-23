@@ -88,6 +88,9 @@ Include any important details a designer or planner might need to know about thi
         real_outputs = self.vlm(**real_inputs, output_attentions=False, output_hidden_states=False)
         target_outputs = self.vlm(**target_inputs, output_attentions=False, output_hidden_states=False)
 
+        print(real_outputs.shape)
+        print(target_outputs.shape)
+
         real_predicted_token_ids = real_outputs.logits.argmax(dim=-1)  # Shape: (batch_size, sequence_length)
         # target_predicted_token_ids = target_outputs.logits.argmax(dim=-1)
 
