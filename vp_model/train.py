@@ -35,9 +35,6 @@ if __name__ == "__main__":
         progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{args['num_epochs']}")
 
         for real_images, target_images in progress_bar:
-            real_images = real_images.to(args["device"])
-            target_images = target_images.to(args["device"])
-
             optimizer.zero_grad()
 
             # 순전파
@@ -59,9 +56,6 @@ if __name__ == "__main__":
         epoch_val_loss = 0.0
         with torch.no_grad():
             for real_images, target_images in val_dataloader:
-                real_images = real_images.to(args["device"])
-                target_images = target_images.to(args["device"])
-
                 outputs = model(real_images, target_images)
                 loss = outputs.loss  # 모델이 반환하는 객체에 따라 조정 필요
 
