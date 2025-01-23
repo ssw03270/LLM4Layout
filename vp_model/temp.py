@@ -24,7 +24,7 @@ image_paths = glob.glob(os.path.join(dataset_folder, "*.png"))[:3]
 image_list = []
 for image_path in tqdm(image_paths):
     image = Image.open(image_path)
-    image_list.append(image)
+    image_list.append([image])
 print(image_list)
 
 inputs = processor(
@@ -36,4 +36,6 @@ inputs = processor(
 output = vlm.generate(**inputs, max_new_tokens=1024)
 output_text = processor.batch_decode(output)
 
-print(output_text)
+for output in output_text:
+    print(output)
+    print("\n\n")
