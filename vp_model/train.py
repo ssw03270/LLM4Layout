@@ -67,8 +67,6 @@ if __name__ == "__main__":
             if accelerator.is_main_process:
                 progress_bar.set_postfix({"loss": loss.item()})
 
-            break
-
         avg_train_loss_tensor = torch.tensor(epoch_train_loss, device=device)
         gathered_train_loss = accelerator.gather(avg_train_loss_tensor).sum() / len(train_dataloader)
         avg_train_loss = gathered_train_loss.item()
@@ -81,7 +79,6 @@ if __name__ == "__main__":
             for real_images, target_images in val_dataloader:
                 loss = model(real_images, target_images, device)
                 epoch_val_loss += loss.item()
-                break
 
         avg_val_loss_tensor = torch.tensor(epoch_val_loss, device=device)
         gathered_val_loss = accelerator.gather(avg_val_loss_tensor).sum() / len(val_dataloader)
@@ -105,8 +102,6 @@ if __name__ == "__main__":
             save_path = os.path.join(save_dir, f"{model_name}_vp_{epoch}.pth")
             torch.save(accelerator.unwrap_model(model).vp.state_dict(), save_path)
             print(f"Model vp saved to {save_path}")
-
-        break
 
     if accelerator.is_main_process:
         wandb.finish()
