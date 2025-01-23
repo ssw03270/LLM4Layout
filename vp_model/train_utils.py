@@ -89,7 +89,7 @@ Include any important details a designer or planner might need to know about thi
         target_outputs = self.vlm(**target_inputs, output_attentions=False, output_hidden_states=False)
 
         real_predicted_token_ids = real_outputs.logits.argmax(dim=-1)  # Shape: (batch_size, sequence_length)
-        target_predicted_token_ids = target_outputs.logits.argmax(dim=-1)
+        # target_predicted_token_ids = target_outputs.logits.argmax(dim=-1)
 
         loss = F.cross_entropy(
             target_outputs.logits.view(-1, target_outputs.logits.size(-1)),  # [batch_size * sequence_length, vocab_size]
@@ -101,10 +101,12 @@ Include any important details a designer or planner might need to know about thi
         # print(real_decoded_text)
         # print(target_decoded_text)
 
-        print(real_outputs.logits.shape)
-        print(target_outputs.logits.shape)
-        print(loss)
-        exit()
+        # print(real_outputs.logits.shape)
+        # print(target_outputs.logits.shape)
+        # print(loss)
+        # exit()
+
+        return loss
 
         # real_generated_text = self.processor.batch_decode(real_output)
         # target_generated_text = self.processor.batch_decode(target_output)

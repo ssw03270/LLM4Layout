@@ -2,6 +2,10 @@ import data_utils
 import pre_utils
 import train_utils
 
+import os
+from tqdm import tqdm
+import torch
+
 if __name__ == "__main__":
     args = pre_utils.parse_args()
     pre_utils.set_seed(args["seed"])
@@ -21,12 +25,56 @@ if __name__ == "__main__":
     train_dataloader, val_dataloader, model, optimizer, accelerator = train_utils.get_accelerator(
         train_dataloader, val_dataloader, model, optimizer)
 
-    for epoch in range(args["num_epochs"]):
-        for real_images, target_images in train_dataloader:
-            real_generated_text, target_generated_text = model(real_images, target_images)
-            for output in real_generated_text:
-                print("real_output:", output)
+    # 학습 및 검증 손실 기록을 위한 리스트
+    train_losses = []
+    val_losses = []
 
-            for output in target_generated_text:
-                print("target_output:", output)
-            exit()
+    for epoch in range(args["num_epochs"]):
+        model.train()
+        epoch_train_loss = 0.0
+        progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{args['num_epochs']}")
+
+        for real_images, target_images in progress_bar:
+            real_images = real_images.to(args["device"])
+            target_images = target_images.to(args["device"])
+
+            optimizer.zero_grad()
+
+            # 순전파
+            outputs = model(real_images, target_images)
+            loss = outputs.loss  # 모델이 반환하는 객체에 따라 조정 필요
+
+            # 역전파
+            accelerator.backward(loss)
+            optimizer.step()
+
+            epoch_train_loss += loss.item()
+            progress_bar.set_postfix({"loss": loss.item()})
+
+        avg_train_loss = epoch_train_loss / len(train_dataloader)
+        train_losses.append(avg_train_loss)
+
+        # 검증 단계
+        model.eval()
+        epoch_val_loss = 0.0
+        with torch.no_grad():
+            for real_images, target_images in val_dataloader:
+                real_images = real_images.to(args["device"])
+                target_images = target_images.to(args["device"])
+
+                outputs = model(real_images, target_images)
+                loss = outputs.loss  # 모델이 반환하는 객체에 따라 조정 필요
+
+                epoch_val_loss += loss.item()
+
+        avg_val_loss = epoch_val_loss / len(val_dataloader)
+        val_losses.append(avg_val_loss)
+
+        print(f"Epoch {epoch+1}/{args['num_epochs']} - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+
+    # 모델 저장
+    save_dir = args["save_dir"]
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, f"{args['model_name']}_vp.pth")
+    torch.save(model.vp.state_dict(), save_path)
+    print(f"Model vp saved to {save_path}")
