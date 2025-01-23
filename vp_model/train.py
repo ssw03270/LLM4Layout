@@ -34,7 +34,7 @@ if __name__ == "__main__":
         wandb.login(key='0f272b4978c0b450c3765b24b8abd024d7799e80')
         wandb.init(
             project="llama_vision_vp",  # Replace with your WandB project name
-            config=vars(args),            # Logs all hyperparameters
+            config=args,            # Logs all hyperparameters
             name=wandb_name,  # Optional: Name your run
             save_code=True                # Optional: Save your code with the run
         )
