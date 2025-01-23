@@ -18,8 +18,10 @@ prompt = """
 """
 prompts = [prompt] * 3
 
-dataset_folder = "./indoor_preprocessing/outputs/layouts/real_images/"
-image_paths = glob.glob(os.path.join(dataset_folder, "*.png"))[:3]
+# dataset_folder = "./indoor_preprocessing/outputs/layouts/real_images/"
+# image_paths = glob.glob(os.path.join(dataset_folder, "*.png"))[:3]
+
+image_paths = ["./car.png", "./apple.png", "./robot.png"]
 
 image_list = []
 for image_path in tqdm(image_paths):
