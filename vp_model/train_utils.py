@@ -86,10 +86,13 @@ Include any important details a designer or planner might need to know about thi
         # generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,
         #                                              clean_up_tokenization_spaces=False)
 
-        real_generated_text = self.processor.batch_decode(real_output)
-        target_generated_text = self.processor.batch_decode(target_output)
+        print(real_output)
+        exit()
 
-        return real_generated_text, target_generated_text
+        # real_generated_text = self.processor.batch_decode(real_output)
+        # target_generated_text = self.processor.batch_decode(target_output)
+        #
+        # return real_generated_text, target_generated_text
 
 def build_model(args):
     model = UrbanModel(args)
