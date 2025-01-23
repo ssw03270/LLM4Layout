@@ -130,4 +130,4 @@ def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optim
         train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
     )
 
-    return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
+    return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
