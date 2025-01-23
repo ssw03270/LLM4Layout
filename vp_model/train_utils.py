@@ -120,7 +120,8 @@ def get_optimizer(model, args):
     return optimizer
 
 def get_scheduler(optimizer, args):
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * args["epoch"]), int(0.72 * args["epoch"])], gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * args["num_epochs"]),
+                                                                            int(0.72 * args["num_epochs"])], gamma=0.1)
     return scheduler
 
 def get_accelerator(train_dataloader, val_dataloader, model, optimizer):
