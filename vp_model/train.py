@@ -3,7 +3,11 @@ import pre_utils
 import train_utils
 
 import os
+from datetime import datetime
+
 from tqdm import tqdm
+import wandb
+
 import torch
 
 if __name__ == "__main__":
@@ -24,6 +28,17 @@ if __name__ == "__main__":
     train_dataloader, val_dataloader, model, optimizer, accelerator = train_utils.get_accelerator(
         train_dataloader, val_dataloader, model, optimizer)
     device = accelerator.device
+
+    if accelerator.is_main_process:
+        wandb_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')  # 형식: YYYY-MM-DD_HH-MM-SS
+        wandb.login(key='0f272b4978c0b450c3765b24b8abd024d7799e80')
+        wandb.init(
+            project="llama_vision_vp",  # Replace with your WandB project name
+            config=vars(args),            # Logs all hyperparameters
+            name=wandb_name,  # Optional: Name your run
+            save_code=True                # Optional: Save your code with the run
+        )
+        wandb.watch(model, log="all")
 
     # 학습 및 검증 손실 기록을 위한 리스트
     train_losses = []
@@ -66,12 +81,22 @@ if __name__ == "__main__":
         avg_val_loss = accelerator.gather(torch.tensor(epoch_val_loss)).sum() / len(val_dataloader)
         val_losses.append(avg_val_loss)
 
-        print(f"Epoch {epoch+1}/{args['num_epochs']} - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
-
         if accelerator.is_main_process:
+            print(f"Epoch {epoch+1}/{args['num_epochs']} - Train Loss: {avg_train_loss:.4f} - Val Loss: {avg_val_loss:.4f}")
+
+            # W&B에 손실 값 로깅
+            wandb.log({
+                "epoch": epoch + 1,
+                "train_loss": avg_train_loss,
+                "val_loss": avg_val_loss
+            })
+
             # 모델 저장
             save_dir = args["save_dir"]
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, f"{args['model_name']}_vp_{epoch}.pth")
             torch.save(model.vp.state_dict(), save_path)
             print(f"Model vp saved to {save_path}")
+
+    if accelerator.is_main_process:
+        wandb.finish()
