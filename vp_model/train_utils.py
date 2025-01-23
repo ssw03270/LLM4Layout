@@ -17,8 +17,6 @@ class UrbanModel(nn.Module):
 
         self.processor = AutoProcessor.from_pretrained(model_name)
 
-        self.vp = ExpansiveVisualPrompt(pad_size=560, target_size=500)
-
         system_prompt = """You are an expert visual reasoning assistant. 
 You have the ability to observe an image and describe it in detail. 
 Then, you will answer questions about the image, step by step, to demonstrate thorough understanding and reasoning."""
