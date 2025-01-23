@@ -13,12 +13,12 @@ class LayoutDataset(Dataset):
         self.data_paths = split_dataset_paths[dataset_type]
 
     def __getitem__(self, index):
-        satellite_image_file_path, bldg_polygon_image_file_path = self.data_paths[index]
+        real_image_path, target_image_path = self.data_paths[index]
 
-        satellite_image = Image.open(satellite_image_file_path).convert("RGB")
-        bldg_polygon_image = Image.open(bldg_polygon_image_file_path).convert("RGB")
+        real_image = Image.open(real_image_path).convert("RGB")
+        target_image = Image.open(target_image_path).convert("RGB")
 
-        return np.array(satellite_image), np.array(bldg_polygon_image)
+        return np.array(real_image), np.array(target_image)
 
     def __len__(self):
         return len(self.data_paths)

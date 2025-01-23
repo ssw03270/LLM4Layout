@@ -22,8 +22,11 @@ if __name__ == "__main__":
         train_dataloader, val_dataloader, model, optimizer)
 
     for epoch in range(args["num_epochs"]):
-        for source_image, target_image in train_dataloader:
-            outputs = model(source_image, target_image)
-            for output in outputs:
-                print("output:", output)
+        for real_images, target_images in train_dataloader:
+            real_generated_text, target_generated_text = model(real_images, target_images)
+            for output in real_generated_text:
+                print("real_output:", output)
+
+            for output in target_generated_text:
+                print("target_output:", output)
             exit()

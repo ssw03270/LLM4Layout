@@ -53,32 +53,43 @@ Include any important details a designer or planner might need to know about thi
 
 <|start_header_id|>assistant<|end_header_id|>
 """
-    def forward(self, source_image, target_image):
-        prompts = [self.prompt] * source_image.size(0)
+    def forward(self, real_images, target_images):
+        prompts = [self.prompt] * real_images.size(0)
+        real_image_list = []
+        target_image_list = []
+        for real_image, target_image in enumerate(real_images, target_images):
+            real_image_list.append([real_image])
+            target_image_list.append([target_image])
 
-        images = []
-        for i, image in enumerate(target_image):
-            images.append([image])
-
-        inputs = self.processor(
-            images=images,
+        real_inputs = self.processor(
+            images=real_image_list,
             text=prompts,
             add_special_tokens=False,
             return_tensors="pt"
         ).to(self.args["device"])
 
-        # inputs["pixel_values"] = self.vp(inputs["pixel_values"])
+        target_inputs = self.processor(
+            images=target_image_list,
+            text=prompts,
+            add_special_tokens=False,
+            return_tensors="pt"
+        ).to(self.args["device"])
+
+        target_inputs["pixel_values"] = self.vp(target_inputs["pixel_values"])
 
         # outputs = self.vlm(**inputs)
-        output = self.vlm.generate(**inputs, max_new_tokens=1024)
-        prompt_len = inputs.input_ids.shape[-1]
+        real_output = self.vlm.generate(**real_inputs, max_new_tokens=1024)
+        target_output = self.vlm.generate(**target_inputs, max_new_tokens=1024)
+
+        # prompt_len = real_inputs.input_ids.shape[-1]
         # generated_ids = output[:, prompt_len:]
         # generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True,
         #                                              clean_up_tokenization_spaces=False)
 
-        generated_text = self.processor.batch_decode(output)
+        real_generated_text = self.processor.batch_decode(real_output)
+        target_generated_text = self.processor.batch_decode(target_output)
 
-        return generated_text
+        return real_generated_text, target_generated_text
 
 def build_model(args):
     model = UrbanModel(args)
