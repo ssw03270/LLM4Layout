@@ -74,7 +74,7 @@ if __name__ == "__main__":
         scheduler.step()
 
         avg_train_loss_tensor = torch.tensor(epoch_train_loss, device=device)
-        gathered_train_loss = accelerator.gather(avg_train_loss_tensor).sum() / len(train_dataloader)
+        gathered_train_loss = accelerator.gather(avg_train_loss_tensor).sum() / (len(train_dataloader) * accelerator.num_processes)
         avg_train_loss = gathered_train_loss.item()
         train_losses.append(avg_train_loss)
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
                     val_progress_bar.set_postfix({"loss": loss.item()})
 
         avg_val_loss_tensor = torch.tensor(epoch_val_loss, device=device)
-        gathered_val_loss = accelerator.gather(avg_val_loss_tensor).sum() / len(val_dataloader)
+        gathered_val_loss = accelerator.gather(avg_val_loss_tensor).sum() / (len(val_dataloader) * accelerator.num_processes)
         avg_val_loss = gathered_val_loss.item()
         val_losses.append(avg_val_loss)
 
