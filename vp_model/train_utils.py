@@ -124,10 +124,10 @@ def get_scheduler(optimizer, args):
                                                                             int(0.72 * args["num_epochs"])], gamma=0.1)
     return scheduler
 
-def get_accelerator(train_dataloader, val_dataloader, model, optimizer):
+def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler):
     accelerator = Accelerator()
-    train_dataloader, val_dataloader, model, optimizer = accelerator.prepare(
-        train_dataloader, val_dataloader, model, optimizer
+    train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler = accelerator.prepare(
+        train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
     )
 
-    return train_dataloader, val_dataloader, model, optimizer, accelerator
+    return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
