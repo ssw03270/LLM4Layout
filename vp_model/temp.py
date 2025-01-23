@@ -11,13 +11,12 @@ from PIL import Image
 vlm = MllamaForConditionalGeneration.from_pretrained("meta-llama/Llama-3.2-11B-Vision-Instruct", device_map="auto", torch_dtype=torch.bfloat16)
 processor = AutoProcessor.from_pretrained("meta-llama/Llama-3.2-11B-Vision-Instruct")
 
-messages = [
-    {"role": "user", "content": [
-        {"type": "image"},
-        {"type": "text", "text": "what is this image?"}
-    ]}
-] * 3
-input_texts = processor.apply_chat_template(messages, add_generation_prompt=True)
+prompt = """
+<|begin_of_text|><|start_header_id|>user<|end_header_id|>
+<|image|>what is this image?<|eot_id|>
+<|start_header_id|>assistant<|end_header_id|>
+"""
+prompts = [prompt] * 3
 
 dataset_folder = "./indoor_preprocessing/outputs/layouts/real_images/"
 image_paths = glob.glob(os.path.join(dataset_folder, "*.png"))[:3]
@@ -29,8 +28,8 @@ for image_path in tqdm(image_paths):
 print(image_list)
 
 inputs = processor(
-    image_list,
-    input_texts,
+    images=image_list,
+    text=prompts,
     add_special_tokens=False,
     return_tensors="pt"
 ).to(vlm.device)
