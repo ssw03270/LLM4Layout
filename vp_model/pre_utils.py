@@ -6,7 +6,7 @@ import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_dir", type=str, default="F:\\Urban\\Preprocessed_Dataset")
+    parser.add_argument("--dataset_dir", type=str, default="/local_datasets/llm4layout/outputs/indoor_layouts/")
     parser.add_argument("--save_dir", type=str, default="F:\\Urban\\Trained_Model")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.2-11B-Vision-Instruct")
     parser.add_argument("--seed", type=int, default=327)

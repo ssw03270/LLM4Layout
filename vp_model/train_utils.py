@@ -22,12 +22,12 @@ class UrbanModel(nn.Module):
 
         self.vp = ExpansiveVisualPrompt(pad_size=560, target_size=500)
 
-        self.system_prompt = """
+        system_prompt = """
 You are an expert visual reasoning assistant. 
 You have the ability to observe an image and describe it in detail. 
 Then, you will answer questions about the image, step by step, to demonstrate thorough understanding and reasoning.
 """
-        self.user_prompt = """
+        user_prompt = """
 [1] First, describe the entire scene you observe in the image. 
 Include details about the space, objects, furniture, and any other notable elements.
 
@@ -44,49 +44,30 @@ Include details about the space, objects, furniture, and any other notable eleme
 [4] Finally, summarize your observations in a concise paragraph. 
 Include any important details a designer or planner might need to know about this space.
 """
+        self.prompt = f"""
+<|begin_of_text|>
+
+<|start_header_id|>system<|end_header_id|>
+{system_prompt}<|eot_id|>
+
+<|start_header_id|>user<|end_header_id|>
+<|image|>{user_prompt}<|eot_id|>
+
+<|start_header_id|>assistant<|end_header_id|>
+"""
     def forward(self, source_image, target_image):
-        messages = [
-            {
-                "role": "system",
-                "content": self.system_prompt
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": self.user_prompt}
-                ]
-            }
-        ] * source_image.size(0)
+        prompts = [self.prompt] * source_image.size(0)
 
         images = []
         for i, image in enumerate(target_image):
-            images.append(image)
+            images.append([image])
 
         inputs = self.processor(
             images=images,
-            text=messages,
+            text=prompts,
             add_special_tokens=False,
             return_tensors="pt"
         ).to(self.args["device"])
-
-        # for key, value in inputs.items():
-        #     print(key, value.shape)
-        # input_ids: torch.Size([2, 13])
-        # attention_mask: torch.Size([2, 13])
-        # pixel_values: torch.Size([1, 2, 4, 3, 560, 560])
-        # aspect_ratio_ids: torch.Size([1, 2])
-        # aspect_ratio_mask: torch.Size([1, 2, 4])
-        # cross_attention_mask: torch.Size([2, 13, 1, 4])
-
-        # image = inputs["pixel_values"][0, 0, 0].permute(1, 2, 0).cpu().detach().numpy()  # torch 텐서를 numpy 배열로 변환
-        #
-        # # 시각화
-        # plt.figure(figsize=(8, 8))
-        # plt.imshow((image - image.min()) / (image.max() - image.min()))
-        # plt.axis('off')  # 축 숨기기
-        # plt.title("3x560x560 Tensor Visualization")
-        # plt.show()
 
         inputs["pixel_values"] = self.vp(inputs["pixel_values"])
 

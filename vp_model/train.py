@@ -23,6 +23,7 @@ if __name__ == "__main__":
 
     for epoch in range(args["num_epochs"]):
         for source_image, target_image in train_dataloader:
-            output = model(source_image, target_image)
-            print(output)
+            outputs = model(source_image, target_image)
+            for output in outputs:
+                print(output)
             exit()
