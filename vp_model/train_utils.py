@@ -10,7 +10,7 @@ from visual_prompt import ExpansiveVisualPrompt
 class UrbanModel(nn.Module):
     def __init__(self, model_name):
         super(UrbanModel, self).__init__()
-        self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16)
+        self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         self.vlm.tie_weights()
         for param in self.vlm.parameters():
             param.requires_grad = False
