@@ -60,7 +60,7 @@ if __name__ == "__main__":
             # 순전파
             real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, device)
             target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
-            loss = vlm_model(real_inputs, target_inputs, device)
+            loss = vlm_model(real_inputs, target_inputs)
 
             # 역전파
             accelerator.backward(loss)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             for real_images, target_images in val_progress_bar:
                 real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, device)
                 target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
-                loss = vlm_model(real_inputs, target_inputs, device)
+                loss = vlm_model(real_inputs, target_inputs)
 
                 epoch_val_loss += loss.item()
 
