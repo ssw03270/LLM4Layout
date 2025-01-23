@@ -89,8 +89,11 @@ Include any important details a designer or planner might need to know about thi
         real_outputs = self.vlm(**real_inputs, output_attentions=False, output_hidden_states=False)
         target_outputs = self.vlm(**target_inputs, output_attentions=False, output_hidden_states=False)
 
-        real_decoded_text = self.processor.batch_decode(real_outputs.argmax(dim=-1), skip_special_tokens=True)
-        target_decoded_text = self.processor.batch_decode(target_outputs.argmax(dim=-1), skip_special_tokens=True)
+        real_predicted_token_ids = real_outputs.logits.argmax(dim=-1)  # Shape: (batch_size, sequence_length)
+        target_predicted_token_ids = target_outputs.logits.argmax(dim=-1)
+
+        real_decoded_text = self.processor.batch_decode(real_predicted_token_ids, skip_special_tokens=True)
+        target_decoded_text = self.processor.batch_decode(target_predicted_token_ids, skip_special_tokens=True)
 
         print(real_decoded_text)
         print(target_decoded_text)
