@@ -205,7 +205,7 @@ def visualize_polygons(polygons, floor, class_label_texts, class_label_indices, 
 
     return fig
 
-dataset_folder = "D:\\Indoor\\InstructScene"
+dataset_folder = "E:\\Resources\\IndoorSceneSynthesis\\InstructScene"
 room_types = ["threed_front_bedroom"]
 
 rendered_image_file_name = "blender_rendered_scene_256\\topdown.png"
@@ -267,5 +267,12 @@ for room_type in room_types:
 
         layout_fig = visualize_polygons(furnitures, floor, class_label_texts, class_label_indices, view_bound)
         layout_image_output_path = os.path.join(output_folder, layout_output_path, f"{subfolder}_layout.png")
-        layout_fig.savefig(layout_image_output_path, bbox_inches="tight", dpi=100, pad_inches=0)
+        layout_fig.savefig(layout_image_output_path, bbox_inches=None, dpi=100, pad_inches=0)
         plt.close(layout_fig)  # 해당 figure 닫기
+
+        desired_size = (256, 256)
+        img = Image.open(layout_image_output_path)
+        img_size = img.size  # (width, height)
+        if img_size != desired_size:
+            print(f"경고: 이미지 크기가 예상과 다릅니다! 예상: {desired_size}, 실제: {img_size}")
+            exit()
