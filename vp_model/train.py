@@ -38,8 +38,7 @@ if __name__ == "__main__":
             optimizer.zero_grad()
 
             # 순전파
-            outputs = model(real_images, target_images)
-            loss = outputs.loss  # 모델이 반환하는 객체에 따라 조정 필요
+            loss = model(real_images, target_images)
 
             # 역전파
             accelerator.backward(loss)
@@ -56,9 +55,7 @@ if __name__ == "__main__":
         epoch_val_loss = 0.0
         with torch.no_grad():
             for real_images, target_images in val_dataloader:
-                outputs = model(real_images, target_images)
-                loss = outputs.loss  # 모델이 반환하는 객체에 따라 조정 필요
-
+                loss = model(real_images, target_images)
                 epoch_val_loss += loss.item()
 
         avg_val_loss = epoch_val_loss / len(val_dataloader)
