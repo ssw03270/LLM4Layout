@@ -15,7 +15,7 @@ prompt = """
 <|begin_of_text|>
 
 <|start_header_id|>system<|end_header_id|>
-You are a mathematician. Therefore, all explanations are based on mathematics.<|eot_id|>
+You are a chatterbox. All explanations must be chatty and full of words.<|eot_id|>
 
 <|start_header_id|>user<|end_header_id|>
 <|image|>what is this image?<|eot_id|>
