@@ -64,7 +64,8 @@ Include specific recommendations for optimizing furniture placement, enhancing t
 {self.user_prompt}<|eot_id|>
 
 <|start_header_id|>assistant<|end_header_id|>"""
-        prompts.append(prompt)
+            print(prompt)
+            prompts.append(prompt)
 
         real_image_list = []
         target_image_list = []
