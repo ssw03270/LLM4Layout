@@ -55,6 +55,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
         prompts = []
         for text_description in text_descriptions:
             prompt = f"""<|begin_of_text|>
+            
 <|start_header_id|>system<|end_header_id|>
 {self.system_prompt}<|eot_id|>
 
@@ -63,8 +64,8 @@ Include specific recommendations for optimizing furniture placement, enhancing t
 
 {self.user_prompt}<|eot_id|>
 
-<|start_header_id|>assistant<|end_header_id|>"""
-            print(prompt)
+<|start_header_id|>assistant<|end_header_id|>
+"""
             prompts.append(prompt)
 
         real_image_list = []
@@ -82,6 +83,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
             images=real_image_list,
             text=prompts,
             add_special_tokens=False,
+            padding=True,
             return_tensors="pt"
         ).to(device)
 
@@ -89,6 +91,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
             images=target_image_list,
             text=prompts,
             add_special_tokens=False,
+            padding=True,
             return_tensors="pt"
         ).to(device)
 
