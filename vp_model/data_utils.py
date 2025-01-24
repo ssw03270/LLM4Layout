@@ -13,12 +13,16 @@ class LayoutDataset(Dataset):
         self.data_paths = split_dataset_paths[dataset_type]
 
     def __getitem__(self, index):
-        real_image_path, target_image_path = self.data_paths[index]
+        real_image_path, target_image_path, text_description_path = self.data_paths[index]
 
         real_image = Image.open(real_image_path).convert("RGB")
         target_image = Image.open(target_image_path).convert("RGB")
 
-        return np.array(real_image), np.array(target_image)
+        with open(text_description_path, 'r', encoding='utf-8') as file:
+            text_description = file.read().strip()
+
+
+        return np.array(real_image), np.array(target_image), text_description
 
     def __len__(self):
         return len(self.data_paths)
@@ -26,18 +30,22 @@ class LayoutDataset(Dataset):
 def get_dataset_paths(dataset_folder):
     real_image_folder = os.path.join(dataset_folder, "real_images")
     target_image_folder = os.path.join(dataset_folder, "target_images")
+    text_description_folder = os.path.join(dataset_folder, "text_description")
 
     real_image_paths = glob.glob(os.path.join(real_image_folder, "*.png"))
     target_image_paths = glob.glob(os.path.join(target_image_folder, "*.png"))
+    text_description_paths = glob.glob(os.path.join(text_description_folder, "*.txt"))
 
     real_image_paths = sorted(real_image_paths)
     target_image_paths = sorted(target_image_paths)
+    text_description_paths = sorted(text_description_paths)
 
     print("Get data folders: ", dataset_folder)
 
     dataset_paths_dict = {
         "real_image_paths": real_image_paths,
         "target_image_paths": target_image_paths,
+        "text_description_paths": text_description_paths,
     }
 
     return dataset_paths_dict
@@ -45,6 +53,7 @@ def get_dataset_paths(dataset_folder):
 def split_dataset(dataset_paths_dict, train_ratio=0.7, val_ratio=0.2, test_ratio=0.1):
     real_image_paths = dataset_paths_dict["real_image_paths"]
     target_image_paths = dataset_paths_dict["target_image_paths"]
+    text_description_paths = dataset_paths_dict["text_description_paths"]
 
     total_files = len(real_image_paths)
     indices = list(range(total_files))
@@ -57,8 +66,9 @@ def split_dataset(dataset_paths_dict, train_ratio=0.7, val_ratio=0.2, test_ratio
     for i, file_idx in enumerate(indices):
         real_image_path = real_image_paths[file_idx]
         target_image_path = target_image_paths[file_idx]
+        text_description_path = text_description_paths[file_idx]
 
-        file_path_tuple = (real_image_path, target_image_path)
+        file_path_tuple = (real_image_path, target_image_path, text_description_path)
         if i < train_end:
             split_dataset_paths["train"].append(file_path_tuple)
         elif i < val_end:

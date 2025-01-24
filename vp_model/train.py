@@ -54,11 +54,11 @@ if __name__ == "__main__":
         else:
             train_progress_bar = train_dataloader
 
-        for real_images, target_images in train_progress_bar:
+        for real_images, target_images, text_descriptions in train_progress_bar:
             optimizer.zero_grad()
 
             # 순전파
-            real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, device)
+            real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
             target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
             loss = vlm_model(real_inputs, target_inputs)
 
@@ -87,8 +87,8 @@ if __name__ == "__main__":
         vp_model.eval()
         epoch_val_loss = 0.0
         with torch.no_grad():
-            for real_images, target_images in val_progress_bar:
-                real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, device)
+            for real_images, target_images, text_descriptions in val_progress_bar:
+                real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
                 target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
                 loss = vlm_model(real_inputs, target_inputs)
 

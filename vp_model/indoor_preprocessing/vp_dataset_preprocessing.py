@@ -1,6 +1,12 @@
 import os
 from tqdm import tqdm
+from typing import *
 
+import nltk
+from nltk.corpus import cmudict
+nltk.download('cmudict')
+
+import pickle
 import json
 import numpy as np
 
@@ -11,6 +17,167 @@ from shapely.geometry import Polygon, box
 from shapely.affinity import translate
 
 from math import cos, sin
+
+def starts_with_vowel_sound(word, pronunciations=cmudict.dict()):
+    for syllables in pronunciations.get(word, []):
+        return syllables[0][-1].isdigit()
+
+
+def get_article(word):
+    word = word.split(" ")[0]
+    article = "an" if starts_with_vowel_sound(word) else "a"
+    return article
+
+def reverse_rel(rel: str) -> str:
+    return {
+        "above": "below",
+        "below": "above",
+        "in front of": "behind",
+        "behind": "in front of",
+        "left of": "right of",
+        "right of": "left of",
+        "closely in front of": "closely behind",
+        "closely behind": "closely in front of",
+        "closely left of": "closely right of",
+        "closely right of": "closely left of"
+    }[rel]
+
+def convert_to_past_participle(verb: str) -> str:
+    """동사를 과거 분사 형태로 변환하는 간단한 함수."""
+    irregular_verbs = {
+        "Place": "placed",
+        "Put": "put",
+        "Position": "positioned",
+        "Arrange": "arranged",
+        "Add": "added",
+        "Set up": "set up",
+        "Hang": "hung",
+        "Install": "installed"
+    }
+    return irregular_verbs.get(verb, verb + "ed")  # 기본적으로 -ed를 붙임
+
+def fill_templates(
+    room_type: str,
+    desc: Dict[str, List],
+    object_types: List[str], predicate_types: List[str],
+    object_descs: Optional[List[str]]=None,
+    seed: Optional[int]=None,
+    return_obj_ids=False
+) -> Tuple[str, Dict[int, int], List[Tuple[int, int, int]], List[Tuple[str, str]]]:
+    room_type = room_type.replace("threed_front_", "")
+
+    if object_descs is None:
+        assert object_types is not None
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    obj_class_ids = desc["obj_class_ids"]  # map from object index to class id
+
+    # Describe the relations between the main objects and others
+    selected_relation_indices = np.random.choice(
+        len(desc["obj_relations"]),
+        min(np.random.choice([1, 2]), len(desc["obj_relations"])),  # select 1 or 2 relations
+        replace=False
+    )
+    selected_relations = [desc["obj_relations"][idx] for idx in selected_relation_indices]
+    selected_relations = [
+        (int(obj_class_ids[s]), int(p), int(obj_class_ids[o]))
+        for s, p, o in selected_relations
+    ]  # e.g., [(4, 2, 18), ...]; 4, 18 are class ids; 2 is predicate id
+    selected_descs = []
+    selected_sentences = []
+    selected_object_ids = []  # e.g., [0, ...]; 0 is object id
+    for idx in selected_relation_indices:
+        s, p, o = desc["obj_relations"][idx]
+        s, p, o = int(s), int(p), int(o)
+        if object_descs is None:
+            s_name = object_types[obj_class_ids[s]].replace("_", " ")
+            o_name = object_types[obj_class_ids[o]].replace("_", " ")
+        else:
+            if np.random.rand() < 0.75:
+                s_name = object_descs[s]
+            else:  # 25% of the time to use the object type as the description
+                s_name = object_types[obj_class_ids[s]].replace("_", " ")
+                s_name = f"{get_article(s_name)} {s_name}"  # "a" or "an" is added
+            if np.random.rand() < 0.75:
+                o_name = object_descs[o]
+            else:
+                o_name = object_types[obj_class_ids[o]].replace("_", " ")
+                o_name = f"{get_article(o_name)} {o_name}"
+
+        p_str = predicate_types[p]
+        rev_p_str = reverse_rel(p_str)
+
+        if p_str in ["left of", "right of"]:
+            if np.random.rand() < 0.5:
+                p_str = "to the " + p_str
+                rev_p_str = "to the " + rev_p_str
+        elif p_str in ["closely left of", "closely right of"]:
+            if np.random.rand() < 0.25:
+                p_str = "closely to the " + p_str.split(" ")[-2] + " of"
+                rev_p_str = "closely to the " + rev_p_str.split(" ")[-2] + " of"
+            elif np.random.rand() < 0.5:
+                p_str = "to the close " + p_str.split(" ")[-2] + " of"
+                rev_p_str = "to the close " + rev_p_str.split(" ")[-2] + " of"
+            elif np.random.rand() < 0.75:
+                p_str = "to the near " + p_str.split(" ")[-2] + " of"
+                rev_p_str = "to the near " + rev_p_str.split(" ")[-2] + " of"
+
+        # Choose whether to describe s relative to o or o relative to s
+        if np.random.rand() < 0.5:
+            verbs = ["Position", "Set up", "Arrange", "Add", "Place", "Install"]
+            if "lamp" in s_name:
+                verbs += ["Hang"]
+            verb = verbs[np.random.choice(len(verbs))]
+            verb_past = convert_to_past_participle(verb)
+            sentence = f"{s_name} is {verb_past} {p_str} {o_name}."
+            selected_descs.append((s_name, o_name))
+            selected_object_ids.append(s)
+        else:  # 50% of the time to reverse the order
+            verbs = ["Position", "Set up", "Arrange", "Add", "Place", "Install"]
+            if "lamp" in o_name:
+                verbs += ["Hang"]
+            verb = verbs[np.random.choice(len(verbs))]
+            verb_past = convert_to_past_participle(verb)
+            sentence = f"{o_name} is {verb_past} {rev_p_str} {s_name}."
+            selected_descs.append((o_name, s_name))
+            selected_object_ids.append(o)
+
+        selected_sentences.append(sentence)
+
+    # 시작 서두 추가
+    text = f"This image shows top view of a {room_type} where "
+
+    conjunctions = [". Additionally, ", ". Next, ", ". Furthermore, ", ". Finally, ", " "]
+    for i, sentence in enumerate(selected_sentences):
+        if i == 0:
+            # Remove the period at the end and connect with 'where'
+            sentence = sentence[:-1]  # Remove the period
+            text += sentence
+        else:
+            conjunction = conjunctions[np.random.choice(len(conjunctions))]
+            while conjunction.strip() == "Finally," and i != len(selected_sentences) - 1:
+                # "Finally" should be used only in the last sentence
+                conjunction = conjunctions[np.random.choice(len(conjunctions))]
+            if conjunction != " ":
+                sentence = sentence[0].lower() + sentence[1:]
+            text += conjunction + sentence
+
+    return_obj_ids = return_obj_ids
+    if return_obj_ids:
+        return text, selected_relations, selected_descs, selected_object_ids
+    else:
+        return text, selected_relations, selected_descs  # return `selected_relations`, `selected_descs` for evaluation
+
+
+def predicate_types():
+    return [
+        "above", "left of", "in front of",
+        "closely left of", "closely in front of",
+        "below", "right of", "behind",
+        "closely right of", "closely behind"
+    ]
 
 def create_polygons(translations, sizes, angles):
     """
@@ -210,16 +377,21 @@ room_types = ["threed_front_bedroom"]
 
 rendered_image_file_name = "blender_rendered_scene_256\\topdown.png"
 layout_npz_file_name = "boxes.npz"
+description_pkl_file_name = "descriptions.pkl"
 dataset_stats_file_name = "dataset_stats.txt"
+models_info_pkl_file_name = "models_info.pkl"
 
-output_folder = "outputs\\layouts"
+output_folder = "outputs\\indoor_layouts"
 real_output_path = "real_images"
 layout_output_path = "target_images"
+description_output_path = "text_description"
 
 if not os.path.exists(os.path.join(output_folder, real_output_path)):
     os.makedirs(os.path.join(output_folder, real_output_path))
 if not os.path.exists(os.path.join(output_folder, layout_output_path)):
     os.makedirs(os.path.join(output_folder, layout_output_path))
+if not os.path.exists(os.path.join(output_folder, description_output_path)):
+    os.makedirs(os.path.join(output_folder, description_output_path))
 
 for room_type in room_types:
     dataset_path = os.path.join(dataset_folder, room_type)
@@ -249,6 +421,8 @@ for room_type in room_types:
         data_folder = os.path.join(dataset_path, subfolder)
         rendered_image_file_path = os.path.join(data_folder, rendered_image_file_name)
         layout_npz_file_path = os.path.join(data_folder, layout_npz_file_name)
+        description_pkl_file_path = os.path.join(data_folder, description_pkl_file_name)
+        models_info_pkl_file_path = os.path.join(data_folder, models_info_pkl_file_name)
 
         rendered_image_file = Image.open(rendered_image_file_path)
         rendered_image_output_path = os.path.join(output_folder, real_output_path, f"{subfolder}_rendered.png")
@@ -260,6 +434,30 @@ for room_type in room_types:
         translations = layout_npz["translations"]
         sizes = layout_npz["sizes"]
         angles = layout_npz["angles"]
+        model_ids = layout_npz["jids"]
+        gpt_captions = []
+
+        with open(description_pkl_file_path, 'rb') as file:
+            description_pkl = pickle.load(file)
+        description = {"obj_class_ids": description_pkl["obj_class_ids"],
+                       "obj_relations": description_pkl["obj_relations"]}
+
+        with open(models_info_pkl_file_path, 'rb') as file:
+            models_info_pkl = pickle.load(file)
+
+        for model_id in model_ids:
+            for model_info in models_info_pkl:
+                if model_info["model_id"] == model_id:
+                    gpt_captions.append(model_info["chatgpt_caption"])
+                    break
+        scene_text_description, _, _ = fill_templates(
+            room_type=room_type,
+            desc=description,
+            object_types=class_labels_book,
+            predicate_types=predicate_types(),
+            object_descs=gpt_captions,
+            seed=None
+        )
 
         furnitures = create_polygons(translations, sizes, angles)
         floor = get_combined_bounding_box(furnitures)
@@ -269,6 +467,10 @@ for room_type in room_types:
         layout_image_output_path = os.path.join(output_folder, layout_output_path, f"{subfolder}_layout.png")
         layout_fig.savefig(layout_image_output_path, bbox_inches=None, dpi=100, pad_inches=0)
         plt.close(layout_fig)  # 해당 figure 닫기
+
+        scene_text_description_output_path = os.path.join(output_folder, description_output_path, f"{subfolder}_description.txt")
+        with open(scene_text_description_output_path, "w", encoding="utf-8") as file:
+            file.write(scene_text_description)
 
         desired_size = (256, 256)
         img = Image.open(layout_image_output_path)
