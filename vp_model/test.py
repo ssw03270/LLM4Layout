@@ -46,9 +46,9 @@ if __name__ == "__main__":
                 file_name = f"{idx}_{batch_idx}_{device}"
 
                 real_image = Image.fromarray(real_images[batch_idx].cpu().detach().numpy())
-                real_text = real_texts[batch_idx].cpu().detach().numpy()
+                real_text = real_texts[batch_idx]
                 target_image = Image.fromarray(target_images[batch_idx].cpu().detach().numpy())
-                target_text = target_texts[batch_idx].cpu().detach().numpy()
+                target_text = target_texts[batch_idx]
 
                 save_dir = "./test_outputs"
                 os.makedirs(save_dir, exist_ok=True)
