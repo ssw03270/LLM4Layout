@@ -30,6 +30,9 @@ def get_dataset_paths(dataset_folder):
     real_image_paths = glob.glob(os.path.join(real_image_folder, "*.png"))
     target_image_paths = glob.glob(os.path.join(target_image_folder, "*.png"))
 
+    real_image_paths = sorted(real_image_paths)
+    target_image_paths = sorted(target_image_paths)
+
     print("Get data folders: ", dataset_folder)
 
     dataset_paths_dict = {
