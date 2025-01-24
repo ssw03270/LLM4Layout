@@ -53,8 +53,8 @@ if __name__ == "__main__":
                 save_dir = "./test_outputs"
                 os.makedirs(save_dir, exist_ok=True)
                 real_image.save(os.path.join(save_dir, file_name + "real_image.png"))
-                with open(os.path.join(save_dir, file_name + "real_text.png")) as file:
+                with open(os.path.join(save_dir, file_name + "real_text.txt")) as file:
                     file.write(real_text)
                 target_image.save(os.path.join(save_dir, file_name + "target_image.png"))
-                with open(os.path.join(save_dir, file_name + "target_text.png")) as file:
+                with open(os.path.join(save_dir, file_name + "target_text.txt")) as file:
                     file.write(target_text)
