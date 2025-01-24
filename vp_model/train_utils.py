@@ -7,9 +7,9 @@ from accelerate import Accelerator
 
 from visual_prompt import ExpansiveVisualPrompt
 
-class UrbanModel(nn.Module):
+class LayoutModel(nn.Module):
     def __init__(self, model_name):
-        super(UrbanModel, self).__init__()
+        super(LayoutModel, self).__init__()
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         self.vlm.tie_weights()
         for param in self.vlm.parameters():
@@ -112,12 +112,12 @@ Include specific recommendations for optimizing furniture placement, enhancing t
 
         return real_text, target_text
 def build_model(args):
-    vlm_model = UrbanModel(args["model_name"])
+    vlm_model = LayoutModel(args["model_name"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
     return vlm_model, vp_model
 
 def build_test_model(args, model_path):
-    vlm_model = UrbanModel(args["model_name"])
+    vlm_model = LayoutModel(args["model_name"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
     vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
