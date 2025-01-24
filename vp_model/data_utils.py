@@ -17,7 +17,7 @@ class LayoutDataset(Dataset):
 
         real_image = Image.open(real_image_path).convert("RGB")
         target_image = Image.open(target_image_path).convert("RGB")
-        print(real_image_path, target_image_path)
+
         return np.array(real_image), np.array(target_image)
 
     def __len__(self):
