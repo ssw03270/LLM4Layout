@@ -95,7 +95,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
             return_tensors="pt"
         ).to(device)
 
-        return real_inputs, target_inputs
+        return real_inputs, target_inputs, prompts
 
     def generate(self, real_inputs, target_inputs):
         prompt_len = real_inputs.input_ids.shape[-1]
