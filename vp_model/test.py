@@ -37,8 +37,8 @@ if __name__ == "__main__":
     # 검증 단계
     vp_model.eval()
     with torch.no_grad():
-        for idx, (real_images, target_images) in enumerate(test_progress_bar):
-            real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, device)
+        for idx, (real_images, target_images, text_descriptions) in enumerate(test_progress_bar):
+            real_inputs, target_inputs = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
             target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
             real_texts, target_texts, = vlm_model.generate(real_inputs, target_inputs)
 
