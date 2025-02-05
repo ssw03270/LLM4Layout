@@ -147,7 +147,6 @@ def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optim
         offload_param_device="cpu",  # 모델 파라미터 오프로드: CPU 사용
         zero3_init_flag=True,  # ZeRO‑3 초기화를 위한 flag 활성화
         zero3_save_16bit_model=True,  # 체크포인트 저장 시 16비트 가중치 수집
-        mixed_precision="bf16"  # 혹은 "fp16" (모델이 bfloat16으로 로드되었으므로 bf16 권장)
     )
 
     # Accelerator를 DeepSpeedPlugin을 포함하여 생성합니다.
@@ -172,7 +171,6 @@ def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, schedu
         offload_param_device="cpu",  # 모델 파라미터 오프로드: CPU 사용
         zero3_init_flag=True,  # ZeRO‑3 초기화를 위한 flag 활성화
         zero3_save_16bit_model=True,  # 체크포인트 저장 시 16비트 가중치 수집
-        mixed_precision="bf16"  # 혹은 "fp16" (모델이 bfloat16으로 로드되었으므로 bf16 권장)
     )
 
     # Accelerator를 DeepSpeedPlugin을 포함하여 생성합니다.
