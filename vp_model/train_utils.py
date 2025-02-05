@@ -10,10 +10,7 @@ from visual_prompt import ExpansiveVisualPrompt
 class LayoutModel(nn.Module):
     def __init__(self, model_name):
         super(LayoutModel, self).__init__()
-        if "Llama-3.2-11B-Vision-Instruct" in model_name:
-            self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-        elif "Qwen2.5-VL-7B-Instruct" in model_name:
-            self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+        self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         self.vlm.tie_weights()
         for param in self.vlm.parameters():
             param.requires_grad = False
