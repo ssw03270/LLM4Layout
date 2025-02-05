@@ -175,9 +175,10 @@ def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, schedu
     # Accelerator를 DeepSpeedPlugin을 포함하여 생성합니다.
     accelerator = Accelerator(deepspeed_plugin=ds_plugin)
 
+    vlm_model = accelerator.prepare(vlm_model)
+
     test_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
         test_dataloader, vp_model, optimizer, scheduler
     )
-    vlm_model = accelerator.prepare(vlm_model)
 
     return test_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
