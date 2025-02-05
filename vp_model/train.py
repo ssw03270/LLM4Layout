@@ -1,3 +1,7 @@
+from huggingface_hub import login
+
+login("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")
+
 import data_utils
 import pre_utils
 import train_utils
