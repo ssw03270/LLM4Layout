@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from transformers import MllamaForConditionalGeneration, Qwen2_5_VLForConditionalGeneration, AutoProcessor
+from transformers import MllamaForConditionalGeneration, AutoProcessor
 from accelerate import Accelerator, DeepSpeedPlugin
 
 from visual_prompt import ExpansiveVisualPrompt
@@ -13,7 +13,7 @@ class LayoutModel(nn.Module):
         if "Llama-3.2-11B-Vision-Instruct" in model_name:
             self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         elif "Qwen2.5-VL-7B-Instruct" in model_name:
-            self.vlm = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+            self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         self.vlm.tie_weights()
         for param in self.vlm.parameters():
             param.requires_grad = False
