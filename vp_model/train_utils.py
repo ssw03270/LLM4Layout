@@ -12,7 +12,6 @@ class LayoutModel(nn.Module):
         super(LayoutModel, self).__init__()
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         self.vlm.tie_weights()
-        self.config = self.vlm.config
         for param in self.vlm.parameters():
             param.requires_grad = False
 
