@@ -1,10 +1,3 @@
-from huggingface_hub import login
-
-with open("api_key.txt", "r") as f:
-    api_key = f.read().strip()  # 공백 제거
-login(api_key)
-
-
 import data_utils
 import pre_utils
 import train_utils
@@ -16,6 +9,12 @@ from tqdm import tqdm
 import wandb
 
 import torch
+
+from huggingface_hub import login
+with open("api_key.txt", "r") as f:
+    api_key = f.read().strip()  # 공백 제거
+os.environ["HF_TOKEN"] = api_key
+login(api_key)
 
 if __name__ == "__main__":
     args = pre_utils.parse_args()
