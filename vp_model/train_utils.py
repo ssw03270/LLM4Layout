@@ -161,16 +161,16 @@ def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, schedu
     # DeepSpeedPlugin을 원하는 설정값으로 생성합니다.
     # 예: ZeRO Stage 3를 사용하고, 옵티마이저 및 파라미터를 CPU로 오프로드하며,
     # 혼합 정밀도는 bf16(혹은 fp16)으로 설정한다고 가정합니다.
-    ds_plugin = DeepSpeedPlugin(
-        hf_ds_config=ds_config_path,  # DeepSpeed 구성 파일 경로 또는 dict
-        gradient_accumulation_steps=1,  # (필요에 따라 조정)
-        gradient_clipping=1.0,  # (예: 최대 norm 1.0)
-        zero_stage=3,  # ZeRO Stage 3 적용
-        offload_optimizer_device="cpu",  # 옵티마이저 상태 오프로드: CPU 사용
-        offload_param_device="cpu",  # 모델 파라미터 오프로드: CPU 사용
-        zero3_init_flag=True,  # ZeRO‑3 초기화를 위한 flag 활성화
-        zero3_save_16bit_model=True,  # 체크포인트 저장 시 16비트 가중치 수집
-    )
+    # ds_plugin = DeepSpeedPlugin(
+    #     hf_ds_config=ds_config_path,  # DeepSpeed 구성 파일 경로 또는 dict
+    #     gradient_accumulation_steps=1,  # (필요에 따라 조정)
+    #     gradient_clipping=1.0,  # (예: 최대 norm 1.0)
+    #     zero_stage=3,  # ZeRO Stage 3 적용
+    #     offload_optimizer_device="cpu",  # 옵티마이저 상태 오프로드: CPU 사용
+    #     offload_param_device="cpu",  # 모델 파라미터 오프로드: CPU 사용
+    #     zero3_init_flag=True,  # ZeRO‑3 초기화를 위한 flag 활성화
+    #     zero3_save_16bit_model=True,  # 체크포인트 저장 시 16비트 가중치 수집
+    # )
 
     # Accelerator를 DeepSpeedPlugin을 포함하여 생성합니다.
     accelerator = Accelerator()
