@@ -11,9 +11,11 @@ import wandb
 import torch
 from accelerate import Accelerator
 from accelerate.utils import DeepSpeedPlugin
-from accelerate.utils.deepspeed import get_active_deepspeed_plugin
 
 from huggingface_hub import login
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 with open("api_key.txt", "r") as f:
     api_key = f.read().strip()  # 공백 제거
 os.environ["HF_TOKEN"] = api_key
