@@ -7,7 +7,8 @@ import numpy as np
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument("--dataset_dir", type=str, default="C:\\Users\\ttd85\\Documents\\Github\LLM4Layout\\vp_model\\indoor_preprocessing\\outputs\\indoor_layouts")
-    parser.add_argument("--dataset_dir", type=str, default="./indoor_preprocessing/outputs/indoor_layouts/")
+    parser.add_argument("--dataset_dir", type=str, default="/local_dataset/llm4layout/outputs/indoor_layouts/")
+    # parser.add_argument("--dataset_dir", type=str, default="./indoor_preprocessing/outputs/indoor_layouts/")
     parser.add_argument("--save_dir", type=str, default="./vp_model_saves")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.2-11B-Vision-Instruct")
     parser.add_argument("--seed", type=int, default=327)
