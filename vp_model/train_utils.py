@@ -10,7 +10,7 @@ from visual_prompt import ExpansiveVisualPrompt
 class LayoutModel(nn.Module):
     def __init__(self, model_name):
         super(LayoutModel, self).__init__()
-        self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+        self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16, load_in_8bit=True)
         self.config = AutoConfig.from_pretrained(model_name)
         self.config.hidden_size = self.config.text_config.hidden_size
         for param in self.vlm.parameters():
