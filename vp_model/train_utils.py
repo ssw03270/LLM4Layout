@@ -40,9 +40,15 @@ For each significant item in the scene, state what it is, where it is located, a
 Include specific recommendations for optimizing furniture placement, enhancing traffic flow, and maximizing the space’s functionality."""
 
     def forward(self, real_inputs, target_inputs):
+        for key, item in real_inputs.items():
+            try:
+                print(key, item.shape)
+            except:
+                print("\n")
         with torch.no_grad():
             real_outputs = self.vlm(**real_inputs, output_attentions=False, output_hidden_states=False)
         target_outputs = self.vlm(**target_inputs, output_attentions=False, output_hidden_states=False)
+        print(real_outputs.shape)
 
         real_predicted_token_ids = real_outputs.logits.argmax(dim=-1)  # Shape: (batch_size, sequence_length)
 
