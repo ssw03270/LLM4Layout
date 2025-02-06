@@ -48,9 +48,9 @@ Include specific recommendations for optimizing furniture placement, enhancing t
         with torch.no_grad():
             real_outputs = self.vlm(**real_inputs, output_attentions=False, output_hidden_states=False)
         target_outputs = self.vlm(**target_inputs, output_attentions=False, output_hidden_states=False)
-        print(real_outputs.shape)
 
         real_predicted_token_ids = real_outputs.logits.argmax(dim=-1)  # Shape: (batch_size, sequence_length)
+        print(real_predicted_token_ids.shape)
 
         loss = F.cross_entropy(
             target_outputs.logits.view(-1, target_outputs.logits.size(-1)),  # [batch_size * sequence_length, vocab_size]
