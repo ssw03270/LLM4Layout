@@ -73,7 +73,8 @@ if __name__ == "__main__":
             # 순전파
             real_inputs, target_inputs, _ = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
             target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
-            loss = vlm_model(real_inputs, target_inputs)
+            with torch.no_grad():
+                loss = vlm_model(real_inputs, target_inputs)
 
             # 역전파
             accelerator.backward(loss)
