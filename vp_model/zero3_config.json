@@ -13,7 +13,8 @@
         "offload_param": {
             "device": "cpu",
             "pin_memory": true
-        }
+        },
+        "contiguous_gradients": true
     },
     "activation_checkpointing": {
         "partition_activations": true,
