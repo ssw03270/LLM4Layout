@@ -6,10 +6,10 @@
         "stage": 3,
         "stage3_gather_16bit_weights_on_model_save": false,
         "offload_optimizer": {
-            "device": "none"
+            "device": "cpu"
         },
         "offload_param": {
-            "device": "none"
+            "device": "cpu"
         }
     },
     "gradient_clipping": 1.0,
