@@ -12,6 +12,7 @@ class LayoutModel(nn.Module):
         super(LayoutModel, self).__init__()
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         self.config = AutoConfig.from_pretrained(model_name)
+        self.config.hidden_size = self.config.text_config.hidden_size
         for param in self.vlm.parameters():
             param.requires_grad = False
 
