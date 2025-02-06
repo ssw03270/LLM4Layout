@@ -11,7 +11,7 @@ class LayoutModel(nn.Module):
     def __init__(self, model_name):
         super(LayoutModel, self).__init__()
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-        self.vlm.config = AutoConfig.from_pretrained(model_name)
+        self.config = AutoConfig.from_pretrained(model_name)
         for param in self.vlm.parameters():
             param.requires_grad = False
 
