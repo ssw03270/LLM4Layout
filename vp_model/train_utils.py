@@ -85,7 +85,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
             images=real_image_list,
             text=prompts,
             add_special_tokens=False,
-            padding=True,
+            padding=False,
             return_tensors="pt"
         ).to(device)
 
@@ -93,7 +93,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
             images=target_image_list,
             text=prompts,
             add_special_tokens=False,
-            padding=True,
+            padding=False,
             return_tensors="pt"
         ).to(device)
 
