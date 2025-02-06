@@ -147,7 +147,7 @@ def get_scheduler(optimizer, accelerator, train_loader, num_epochs):
                                                                                 int(0.72 * num_epochs)], gamma=0.1)
     else:
         scheduler = DummyScheduler(
-            optimizer, total_num_steps=(len(train_loader) * num_epochs), warmup_num_steps=0
+            optimizer, total_num_steps=len(train_loader) * num_epochs, warmup_num_steps=int(len(train_loader) * num_epochs * 0.1)
         )
     return scheduler
 
