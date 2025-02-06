@@ -133,8 +133,11 @@ def get_scheduler(optimizer, args):
 def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler):
     accelerator = Accelerator()
 
-    train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler = accelerator.prepare(
-        train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
+    train_dataloader, val_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
+        train_dataloader, val_dataloader, vp_model, optimizer, scheduler
+    )
+    vlm_model = accelerator.prepare(
+        vlm_model
     )
 
     return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
