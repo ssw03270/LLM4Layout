@@ -9,6 +9,7 @@ from tqdm import tqdm
 import wandb
 
 import torch
+from accelerate import Accelerator
 
 from huggingface_hub import login
 with open("api_key.txt", "r") as f:
@@ -28,12 +29,14 @@ if __name__ == "__main__":
     train_dataloader = data_utils.get_dataloader(train_dataset, args, shuffle=True)
     val_dataloader = data_utils.get_dataloader(val_dataset, args, shuffle=False)
 
+    accelerator = Accelerator()
+
     vlm_model, vp_model = train_utils.build_model(args)
-    optimizer = train_utils.get_optimizer(vp_model, args)
+    optimizer = train_utils.get_optimizer(vp_model, accelerator, args)
     scheduler = train_utils.get_scheduler(optimizer, args)
 
-    train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator = train_utils.get_accelerator(
-        train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler)
+    train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler = train_utils.get_accelerator(
+        train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator)
     device = accelerator.device
 
     if accelerator.is_main_process:

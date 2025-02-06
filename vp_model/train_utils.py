@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from transformers import MllamaForConditionalGeneration, AutoProcessor
-from accelerate import Accelerator
+from accelerate.utils import DummyOptim
 
 from visual_prompt import ExpansiveVisualPrompt
 
@@ -121,8 +121,17 @@ def build_test_model(args, model_path):
     vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
 
-def get_optimizer(model, args):
-    optimizer = torch.optim.Adam(model.parameters(), lr=args["learning_rate"])
+def get_optimizer(model, accelerator, args):
+    optimizer_cls = (
+        torch.optim.AdamW
+        if accelerator.state.deepspeed_plugin is None
+           or "optimizer" not in accelerator.state.deepspeed_plugin.deepspeed_config
+        else DummyOptim
+    )
+    optim_params = [
+        {"params": model.parameters(), "weight_decay": 0},
+    ]
+    optimizer = optimizer_cls(optim_params, lr=args["learning_rate"])
     return optimizer
 
 def get_scheduler(optimizer, args):
@@ -130,9 +139,7 @@ def get_scheduler(optimizer, args):
                                                                             int(0.72 * args["num_epochs"])], gamma=0.1)
     return scheduler
 
-def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler):
-    accelerator = Accelerator()
-
+def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator):
     train_dataloader, val_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
         train_dataloader, val_dataloader, vp_model, optimizer, scheduler
     )
@@ -140,15 +147,13 @@ def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optim
         vlm_model
     )
 
-    return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
+    return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
 
-def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, scheduler):
-    accelerator = Accelerator()
-
+def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator):
     vlm_model = accelerator.prepare(vlm_model)
 
     test_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
         test_dataloader, vp_model, optimizer, scheduler
     )
 
-    return test_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator
+    return test_dataloader, vlm_model, vp_model, optimizer, scheduler
