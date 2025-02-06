@@ -13,8 +13,7 @@
         "offload_param": {
             "device": "cpu",
             "pin_memory": true
-        },
-        "contiguous_gradients": true
+        }
     },
     "train_micro_batch_size_per_gpu": 1
 }
