@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from transformers import MllamaForConditionalGeneration, AutoProcessor
+from transformers import MllamaForConditionalGeneration, AutoProcessor, AutoConfig
 from accelerate.utils import DummyOptim, DummyScheduler
 
 from visual_prompt import ExpansiveVisualPrompt
@@ -11,6 +11,7 @@ class LayoutModel(nn.Module):
     def __init__(self, model_name):
         super(LayoutModel, self).__init__()
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+        self.vlm.config = AutoConfig.from_pretrained(model_name)
         for param in self.vlm.parameters():
             param.requires_grad = False
 
