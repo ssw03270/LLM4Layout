@@ -10,6 +10,8 @@ import wandb
 
 import torch
 from accelerate import Accelerator
+from accelerate.utils import DeepSpeedPlugin
+from accelerate.utils.deepspeed import get_active_deepspeed_plugin
 
 from huggingface_hub import login
 with open("api_key.txt", "r") as f:
@@ -29,11 +31,15 @@ if __name__ == "__main__":
     train_dataloader = data_utils.get_dataloader(train_dataset, args, shuffle=True)
     val_dataloader = data_utils.get_dataloader(val_dataset, args, shuffle=False)
 
-    accelerator = Accelerator()
+    zero2_plugin = DeepSpeedPlugin(hf_ds_config="zero2_config.json")
+    zero3_plugin = DeepSpeedPlugin(hf_ds_config="zero3_config.json")
+
+    deepspeed_plugins = {"student": zero2_plugin, "teacher": zero3_plugin}
+    accelerator = Accelerator(deepspeed_plugins=deepspeed_plugins)
 
     vlm_model, vp_model = train_utils.build_model(args)
-    optimizer = train_utils.get_optimizer(vp_model, accelerator, args)
-    scheduler = train_utils.get_scheduler(optimizer, args)
+    optimizer = train_utils.get_optimizer(vp_model, accelerator, args["learning_rate"])
+    scheduler = train_utils.get_scheduler(optimizer, accelerator, train_dataloader, args["num_epochs"])
 
     train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler = train_utils.get_accelerator(
         train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator)
@@ -64,8 +70,6 @@ if __name__ == "__main__":
             train_progress_bar = train_dataloader
 
         for real_images, target_images, text_descriptions in train_progress_bar:
-            optimizer.zero_grad()
-
             # 순전파
             real_inputs, target_inputs, _ = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
             target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
@@ -74,13 +78,14 @@ if __name__ == "__main__":
             # 역전파
             accelerator.backward(loss)
             optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
 
             epoch_train_loss += loss.item()
 
             if accelerator.is_main_process:
                 train_progress_bar.set_postfix({"loss": loss.item()})
 
-        scheduler.step()
 
         avg_train_loss_tensor = torch.tensor(epoch_train_loss, device=device)
         gathered_train_loss = accelerator.gather(avg_train_loss_tensor).sum() / (len(train_dataloader) * accelerator.num_processes)

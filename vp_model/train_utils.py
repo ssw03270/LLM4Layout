@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from transformers import MllamaForConditionalGeneration, AutoProcessor
-from accelerate.utils import DummyOptim
+from accelerate.utils import DummyOptim, DummyScheduler
 
 from visual_prompt import ExpansiveVisualPrompt
 
@@ -121,7 +121,7 @@ def build_test_model(args, model_path):
     vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
 
-def get_optimizer(model, accelerator, args):
+def get_optimizer(model, accelerator, lr):
     optimizer_cls = (
         torch.optim.AdamW
         if accelerator.state.deepspeed_plugin is None
@@ -131,18 +131,30 @@ def get_optimizer(model, accelerator, args):
     optim_params = [
         {"params": model.parameters(), "weight_decay": 0},
     ]
-    optimizer = optimizer_cls(optim_params, lr=args["learning_rate"])
+    optimizer = optimizer_cls(optim_params, lr=lr)
     return optimizer
 
-def get_scheduler(optimizer, args):
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * args["num_epochs"]),
-                                                                            int(0.72 * args["num_epochs"])], gamma=0.1)
+def get_scheduler(optimizer, accelerator, train_loader, num_epochs):
+    # Creates Dummy Scheduler if `scheduler` was specified in the config file else creates `args.lr_scheduler_type` Scheduler
+    if (
+            accelerator.state.deepspeed_plugin is None
+            or "scheduler" not in accelerator.state.deepspeed_plugin.deepspeed_config
+    ):
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * num_epochs),
+                                                                                int(0.72 * num_epochs)], gamma=0.1)
+    else:
+        scheduler = DummyScheduler(
+            optimizer, total_num_steps=(len(train_loader) * num_epochs), warmup_num_steps=0
+        )
     return scheduler
 
 def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator):
+    accelerator.state.select_deepspeed_plugin("student")
     train_dataloader, val_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
         train_dataloader, val_dataloader, vp_model, optimizer, scheduler
     )
+
+    accelerator.state.select_deepspeed_plugin("teacher")
     vlm_model = accelerator.prepare(
         vlm_model
     )
