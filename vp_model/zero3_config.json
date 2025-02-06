@@ -7,7 +7,7 @@
         "overlap_comm": true,
         "reduce_bucket_size": "auto",
         "stage3_prefetch_bucket_size": "auto",
-        "stage3_param_persistence_threshold": "auto",
+        "stage3_param_persistence_threshold": 100000,
         "stage3_max_live_parameters": 1e9,
         "stage3_max_reuse_distance": 1e9,
         "offload_param": {
