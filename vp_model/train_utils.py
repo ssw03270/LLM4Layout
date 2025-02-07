@@ -121,7 +121,7 @@ def build_model(args):
 def build_test_model(args, model_path):
     vlm_model = LayoutModel(args["model_name"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
-    vp_model.load_state_dict(torch.load(model_path))
+    # vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
 
 def get_optimizer(model, accelerator, lr):
