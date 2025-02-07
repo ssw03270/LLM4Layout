@@ -6,12 +6,21 @@ import os
 
 from tqdm import tqdm
 
+import numpy as np
+from PIL import Image
+
 import torch
 from accelerate import Accelerator
 from accelerate.utils import DeepSpeedPlugin
 
-import numpy as np
-from PIL import Image
+from huggingface_hub import login
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+with open("api_key.txt", "r") as f:
+    api_key = f.read().strip()  # 공백 제거
+os.environ["HF_TOKEN"] = api_key
+login(api_key)
 
 if __name__ == "__main__":
     args = pre_utils.parse_args()
