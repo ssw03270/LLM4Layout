@@ -7,6 +7,9 @@ import os
 from tqdm import tqdm
 
 import torch
+from accelerate import Accelerator
+from accelerate.utils import DeepSpeedPlugin
+
 import numpy as np
 from PIL import Image
 
@@ -20,12 +23,15 @@ if __name__ == "__main__":
 
     test_dataloader = data_utils.get_dataloader(test_dataset, args, shuffle=False)
 
-    vlm_model, vp_model = train_utils.build_test_model(args, model_path=args["model_path"])
-    optimizer = train_utils.get_optimizer(vp_model, args)
-    scheduler = train_utils.get_scheduler(optimizer, args)
+    zero2_plugin = DeepSpeedPlugin(hf_ds_config="zero2_config.json")
+    zero3_plugin = DeepSpeedPlugin(hf_ds_config="zero3_config.json")
 
-    test_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator = train_utils.get_test_accelerator(
-        test_dataloader, vlm_model, vp_model, optimizer, scheduler)
+    deepspeed_plugins = {"student": zero2_plugin, "teacher": zero3_plugin}
+    accelerator = Accelerator(deepspeed_plugins=deepspeed_plugins)
+
+    vlm_model, vp_model = train_utils.build_test_model(args, model_path=args["model_path"])
+
+    test_dataloader, vlm_model, vp_model = train_utils.get_test_accelerator(test_dataloader, vlm_model, vp_model, accelerator)
     device = accelerator.device
 
     vlm_model.eval()
@@ -39,7 +45,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         for idx, (real_images, target_images, text_descriptions) in enumerate(test_progress_bar):
             real_inputs, target_inputs, prompts = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
-            target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
+            # target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
             real_texts, target_texts, = vlm_model.generate(real_inputs, target_inputs)
 
             for batch_idx in range(real_images.shape[0]):

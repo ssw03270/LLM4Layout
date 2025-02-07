@@ -164,11 +164,11 @@ def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optim
 
     return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
 
-def get_test_accelerator(test_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator):
+def get_test_accelerator(test_dataloader, vlm_model, vp_model, accelerator):
+    accelerator.state.select_deepspeed_plugin("student")
     vlm_model = accelerator.prepare(vlm_model)
 
-    test_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
-        test_dataloader, vp_model, optimizer, scheduler
-    )
+    accelerator.state.select_deepspeed_plugin("teacher")
+    test_dataloader, vp_model = accelerator.prepare(test_dataloader, vp_model)
 
-    return test_dataloader, vlm_model, vp_model, optimizer, scheduler
+    return test_dataloader, vlm_model, vp_model

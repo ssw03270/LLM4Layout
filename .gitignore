@@ -176,3 +176,6 @@ outputs
 checkpoint
 *.bin
 *.pkl
+
+api_key.txt
+test_outputs
