@@ -35,8 +35,7 @@ if __name__ == "__main__":
     zero2_plugin = DeepSpeedPlugin(hf_ds_config="zero2_config.json")
     zero3_plugin = DeepSpeedPlugin(hf_ds_config="zero3_config.json")
 
-    deepspeed_plugins = {"student": zero2_plugin, "teacher": zero3_plugin}
-    accelerator = Accelerator(deepspeed_plugins=deepspeed_plugins)
+    accelerator = Accelerator()
 
     vlm_model, vp_model = train_utils.build_test_model(args, model_path=args["model_path"])
 
