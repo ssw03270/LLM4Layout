@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=327)
     parser.add_argument("--num_epochs", type=int, default=200)
     parser.add_argument("--batch_size", type=int, default=2)
-    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--learning_rate", type=float, default=0.01)
     parser.add_argument("--model_path", type=str, default="model_path")
 
     args = vars(parser.parse_args())
