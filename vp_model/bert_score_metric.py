@@ -9,6 +9,7 @@ login(api_key)
 
 # 폴더 경로 설정
 folder_path = "./no_test_outputs"
+asdf_folder_path = "./test_outputs"
 
 # 파일 목록 가져오기
 file_list = os.listdir(folder_path)
@@ -30,7 +31,7 @@ target_output_thirds = []
 target_output_forths = []
 
 for real_text, target_text in zip(real_texts, target_texts):
-    with open(os.path.join(folder_path, real_text), "r", encoding='UTF-8') as f:
+    with open(os.path.join(asdf_folder_path, real_text), "r", encoding='UTF-8') as f:
         real_output = f.read()
 
     with open(os.path.join(folder_path, target_text), "r", encoding='UTF-8') as f:

@@ -56,15 +56,25 @@ Include specific recommendations for optimizing furniture placement, enhancing t
     def get_inputs(self, real_images, target_images, text_descriptions, device):
         prompts = []
         for text_description in text_descriptions:
+#             prompt = f"""<|begin_of_text|>
+#
+# <|start_header_id|>system<|end_header_id|>
+# {self.system_prompt}<|eot_id|>
+#
+# <|start_header_id|>user<|end_header_id|>
+# <|image|>{text_description}
+#
+# {self.user_prompt}<|eot_id|>
+#
+# <|start_header_id|>assistant<|end_header_id|>
+# """
             prompt = f"""<|begin_of_text|>
             
 <|start_header_id|>system<|end_header_id|>
 {self.system_prompt}<|eot_id|>
 
 <|start_header_id|>user<|end_header_id|>
-<|image|>{text_description}
-
-{self.user_prompt}<|eot_id|>
+<|image|>Describe the furniture in the image.<|eot_id|>
 
 <|start_header_id|>assistant<|end_header_id|>
 """
