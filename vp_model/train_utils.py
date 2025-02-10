@@ -135,12 +135,12 @@ def build_test_model(args, model_path):
     return vlm_model, vp_model
 
 def get_optimizer(model, accelerator, lr):
-    optimizer = torch.optim.Adam(model.parameters(), lr=args["learning_rate"])
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     return optimizer
 
 def get_scheduler(optimizer, accelerator, train_loader, num_epochs):
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * args["num_epochs"]),
-                                                                            int(0.72 * args["num_epochs"])], gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(0.5 * num_epochs),
+                                                                            int(0.72 * num_epochs)], gamma=0.1)
     return scheduler
 
 def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator):
