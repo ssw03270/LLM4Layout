@@ -3,14 +3,7 @@
         "enabled": true
     },
     "zero_optimization": {
-        "stage": 3,
-        "overlap_comm": true,
-        "reduce_bucket_size": "auto",
-        "stage3_prefetch_bucket_size": "auto",
-        "stage3_param_persistence_threshold": "auto",
-        "stage3_max_live_parameters": 1e9,
-        "stage3_max_reuse_distance": 1e9,
-        "contiguous_gradients": true
+        "stage": 1
     },
     "train_micro_batch_size_per_gpu": 1
 }

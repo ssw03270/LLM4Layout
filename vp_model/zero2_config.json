@@ -20,9 +20,7 @@
         }
     },
     "zero_optimization": {
-        "stage": 2,
-        "contiguous_gradients": true,
-        "overlap_comm": true
+        "stage": 1
     },
     "gradient_accumulation_steps": 8,
     "gradient_clipping": "auto",
