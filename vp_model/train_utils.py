@@ -162,15 +162,15 @@ def get_scheduler(optimizer, accelerator, train_loader, num_epochs):
     return scheduler
 
 def get_accelerator(train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler, accelerator):
-    accelerator.state.select_deepspeed_plugin("student")
-    train_dataloader, val_dataloader, vp_model, optimizer, scheduler = accelerator.prepare(
-        train_dataloader, val_dataloader, vp_model, optimizer, scheduler
+    # accelerator.state.select_deepspeed_plugin("student")
+    train_dataloader, val_dataloader, vp_model, vlm_model, optimizer, scheduler = accelerator.prepare(
+        train_dataloader, val_dataloader, vp_model, vlm_model, optimizer, scheduler
     )
 
-    accelerator.state.select_deepspeed_plugin("teacher")
-    vlm_model = accelerator.prepare(
-        vlm_model
-    )
+    # accelerator.state.select_deepspeed_plugin("teacher")
+    # vlm_model = accelerator.prepare(
+    #     vlm_model
+    # )
 
     return train_dataloader, val_dataloader, vlm_model, vp_model, optimizer, scheduler
 

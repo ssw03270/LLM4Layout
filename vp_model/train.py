@@ -33,11 +33,12 @@ if __name__ == "__main__":
     train_dataloader = data_utils.get_dataloader(train_dataset, args, shuffle=True)
     val_dataloader = data_utils.get_dataloader(val_dataset, args, shuffle=False)
 
-    zero2_plugin = DeepSpeedPlugin(hf_ds_config="zero2_config.json")
-    zero3_plugin = DeepSpeedPlugin(hf_ds_config="zero3_config.json")
-
-    deepspeed_plugins = {"student": zero2_plugin, "teacher": zero3_plugin}
-    accelerator = Accelerator(deepspeed_plugins=deepspeed_plugins)
+    # zero2_plugin = DeepSpeedPlugin(hf_ds_config="zero2_config.json")
+    # zero3_plugin = DeepSpeedPlugin(hf_ds_config="zero3_config.json")
+    #
+    # deepspeed_plugins = {"student": zero2_plugin, "teacher": zero3_plugin}
+    # accelerator = Accelerator(deepspeed_plugins=deepspeed_plugins)
+    accelerator = Accelerator()
 
     vlm_model, vp_model = train_utils.build_model(args)
     optimizer = train_utils.get_optimizer(vp_model, accelerator, args["learning_rate"])
