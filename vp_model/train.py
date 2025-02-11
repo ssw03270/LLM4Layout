@@ -74,7 +74,9 @@ if __name__ == "__main__":
 
         for real_images, target_images, text_descriptions in train_progress_bar:
             # 순전파
-            real_inputs, target_inputs, _ = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
+            real_inputs, _ = accelerator.unwrap_model(vlm_model).get_inputs(real_images, text_descriptions, device)
+            target_inputs, _ = accelerator.unwrap_model(vlm_model).get_inputs(target_images, text_descriptions, device)
+
             target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
             loss = vlm_model(real_inputs, target_inputs)
 

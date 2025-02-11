@@ -42,7 +42,7 @@ class LayoutModel(nn.Module):
 
         return loss
 
-    def get_inputs(self, real_images, target_images, text_descriptions, device):
+    def get_inputs(self, images, text_descriptions, device):
         prompts = []
         for text_description in text_descriptions:
             prompt = self.main_prompt
@@ -53,34 +53,24 @@ class LayoutModel(nn.Module):
 
             prompts.append(prompt)
 
-        real_image_list = []
-        target_image_list = []
+        image_list = []
 
-        for real_image, target_image in zip(real_images, target_images):
-            real_image_list.append([real_image])
-            target_image_list.append([target_image])
+        for image in images:
+            image_list.append([image])
 
-        if len(prompts) != len(real_images) or len(prompts) != len(target_images):
+        if len(prompts) != len(images):
             print("not enough prompts")
             exit()
 
-        real_inputs = self.processor(
-            images=real_image_list,
+        inputs = self.processor(
+            images=image_list,
             text=prompts,
             add_special_tokens=False,
             padding=True,
             return_tensors="pt"
         ).to(device)
 
-        target_inputs = self.processor(
-            images=target_image_list,
-            text=prompts,
-            add_special_tokens=False,
-            padding=True,
-            return_tensors="pt"
-        ).to(device)
-
-        return real_inputs, target_inputs, prompts
+        return inputs, prompts
 
     def generate(self, inputs):
         prompt_len = inputs.input_ids.shape[-1]
@@ -102,7 +92,7 @@ def build_model(args):
         print("model name error")
         exit()
     vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
-    vp_model = ExpansiveVisualPrompt(pad_size=pad_size, target_size=target_size)
+    vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
     return vlm_model, vp_model
 
 def build_test_model(args, model_path):
