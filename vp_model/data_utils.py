@@ -22,7 +22,7 @@ class LayoutDataset(Dataset):
             text_description = file.read().strip()
 
 
-        return np.array(real_image), np.array(target_image), text_description, [real_image_path], [target_image_path]
+        return np.array(real_image), np.array(target_image), text_description, real_image_path, target_image_path
 
     def __len__(self):
         return len(self.data_paths)

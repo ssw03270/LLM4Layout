@@ -45,10 +45,9 @@ class LayoutModel(nn.Module):
 
         return loss
 
-    def get_inputs(self, images, image_path, text_descriptions, device):
+    def get_inputs(self, images, image_paths, text_descriptions, device):
         message_list = []
-        print(image_path)
-        for text_description in text_descriptions:
+        for text_description, image_path in zip(text_descriptions, image_paths):
             user_prompt = self.user_prompt
             if 'text_description' in self.user_prompt:
                 user_prompt = self.user_prompt.format(text_description=text_description)
@@ -76,7 +75,7 @@ class LayoutModel(nn.Module):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "image", "image": "file://" + image_path[0]},
+                            {"type": "image", "image": "file://" + image_path},
                             {"type": "text", "text": user_prompt}
                         ]
                     }
