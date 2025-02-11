@@ -3,7 +3,6 @@ from torch import nn
 import torch.nn.functional as F
 
 from transformers import AutoProcessor, AutoConfig
-from qwen_vl_utils import process_vision_info
 
 from visual_prompt import ExpansiveVisualPrompt
 
@@ -110,6 +109,7 @@ class LayoutModel(nn.Module):
                 self.processor.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
                 for message in message_list
             ]
+            from qwen_vl_utils import process_vision_info
             image_inputs, _ = process_vision_info(message_list)
             inputs = self.processor(
                 images=image_inputs,
