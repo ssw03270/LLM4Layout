@@ -47,6 +47,7 @@ class LayoutModel(nn.Module):
 
     def get_inputs(self, images, image_path, text_descriptions, device):
         message_list = []
+        print(image_path)
         for text_description in text_descriptions:
             user_prompt = self.user_prompt
             if 'text_description' in self.user_prompt:
