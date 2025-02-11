@@ -53,8 +53,11 @@ if __name__ == "__main__":
     with torch.no_grad():
         for idx, (real_images, target_images, text_descriptions) in enumerate(test_progress_bar):
             real_inputs, target_inputs, prompts = accelerator.unwrap_model(vlm_model).get_inputs(real_images, target_images, text_descriptions, device)
-            target_inputs["pixel_values"] = vp_model(target_inputs["pixel_values"])
-            real_texts, target_texts, = vlm_model.generate(real_inputs, target_inputs)
+            vp_target_inputs = target_inputs
+            vp_target_inputs["pixel_values"] = vp_model(vp_target_inputs["pixel_values"])
+            real_texts, = vlm_model.generate(real_inputs)
+            vp_target_texts, = vlm_model.generate(vp_target_inputs)
+            target_texts, = vlm_model.generate(target_inputs)
 
             for batch_idx in range(real_images.shape[0]):
                 file_name = f"{idx}_{batch_idx}_{device}"
@@ -63,6 +66,7 @@ if __name__ == "__main__":
                 real_text = real_texts[batch_idx]
                 target_image = Image.fromarray(target_images[batch_idx].cpu().detach().numpy())
                 target_text = target_texts[batch_idx]
+                vp_target_text = vp_target_texts[batch_idx]
 
                 prompt = prompts[batch_idx]
 
@@ -72,6 +76,8 @@ if __name__ == "__main__":
                 with open(os.path.join(save_dir, file_name + "_real_text.txt"), "w", encoding="utf-8") as file:
                     file.write(real_text)
                 target_image.save(os.path.join(save_dir, file_name + "_target_image.png"))
+                with open(os.path.join(save_dir, file_name + "_vp_target_text.txt"), "w", encoding="utf-8") as file:
+                    file.write(vp_target_text)
                 with open(os.path.join(save_dir, file_name + "_target_text.txt"), "w", encoding="utf-8") as file:
                     file.write(target_text)
 

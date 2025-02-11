@@ -109,20 +109,15 @@ Include specific recommendations for optimizing furniture placement, enhancing t
 
         return real_inputs, target_inputs, prompts
 
-    def generate(self, real_inputs, target_inputs):
-        prompt_len = real_inputs.input_ids.shape[-1]
+    def generate(self, inputs):
+        prompt_len = inputs.input_ids.shape[-1]
 
-        real_outputs = self.vlm.generate(**real_inputs, max_new_tokens=1024)
-        real_ids = real_outputs[:, prompt_len:]
-        real_text = self.processor.batch_decode(real_ids, skip_special_tokens=True,
+        outputs = self.vlm.generate(**inputs, max_new_tokens=1024)
+        ids = outputs[:, prompt_len:]
+        text = self.processor.batch_decode(ids, skip_special_tokens=True,
                                                 clean_up_tokenization_spaces=False)
 
-        target_outputs = self.vlm.generate(**target_inputs, max_new_tokens=1024)
-        target_ids = target_outputs[:, prompt_len:]
-        target_text = self.processor.batch_decode(target_ids, skip_special_tokens=True,
-                                                  clean_up_tokenization_spaces=False)
-
-        return real_text, target_text
+        return text
 def build_model(args):
     vlm_model = LayoutModel(args["model_name"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
