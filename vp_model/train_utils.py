@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from transformers import MllamaForConditionalGeneration, AutoProcessor, AutoConfig, Qwen2_5_VLForConditionalGeneration
+from transformers import AutoProcessor, AutoConfig
 from qwen_vl_utils import process_vision_info
 
 from visual_prompt import ExpansiveVisualPrompt
@@ -11,8 +11,10 @@ class LayoutModel(nn.Module):
     def __init__(self, model_name, prompt_path):
         super(LayoutModel, self).__init__()
         if 'Llama' in model_name:
+            from transformers import MllamaForConditionalGeneration
             self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         elif 'Qwen' in model_name:
+            from transformers import Qwen2_5_VLForConditionalGeneration
             self.vlm = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         for param in self.vlm.parameters():
             param.requires_grad = False
@@ -92,7 +94,7 @@ class LayoutModel(nn.Module):
             for image in images:
                 image_list.append([image])
             input_text = [
-                self.processor.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+                self.processor.apply_chat_template(message, add_generation_prompt=True)
                 for message in message_list
             ]
             inputs = self.processor(
