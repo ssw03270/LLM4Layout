@@ -3,7 +3,6 @@ from torch import nn
 import torch.nn.functional as F
 
 from transformers import MllamaForConditionalGeneration, AutoProcessor, AutoConfig, Qwen2_5_VLForConditionalGeneration
-from accelerate.utils import DummyOptim, DummyScheduler
 
 from visual_prompt import ExpansiveVisualPrompt
 
