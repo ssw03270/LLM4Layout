@@ -54,19 +54,16 @@ class LayoutModel(nn.Module):
                 user_prompt = self.user_prompt.format(text_description=text_description)
 
             if 'Llama' in self.model_name:
-                message = [
-                    {
-                        "role": "system",
-                        "content": self.system_prompt
-                    },
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "image"},
-                            {"type": "text", "text": user_prompt}
-                        ]
-                    }
-                ]
+                message = f"""
+<|begin_of_text|>
+
+<|start_header_id|>system<|end_header_id|>
+{self.system_prompt}<|eot_id|>
+<|start_header_id|>user<|end_header_id|>
+<|image|>{user_prompt}<|eot_id|>
+<|start_header_id|>assistant<|end_header_id|>
+"""
+
             elif 'Qwen' in self.model_name:
                 message = [
                     {
@@ -92,13 +89,9 @@ class LayoutModel(nn.Module):
             image_list = []
             for image in images:
                 image_list.append([image])
-            input_text = [
-                self.processor.apply_chat_template(message, add_generation_prompt=True)
-                for message in message_list
-            ]
             inputs = self.processor(
                 images=image_list,
-                text=input_text,
+                text=message_list,
                 add_special_tokens=False,
                 padding=True,
                 return_tensors="pt"
