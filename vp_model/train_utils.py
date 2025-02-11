@@ -48,6 +48,8 @@ class LayoutModel(nn.Module):
             prompt = self.main_prompt
             if 'text_description' in self.main_prompt:
                 prompt = self.main_prompt.format(text_description=text_description)
+            if 'system_prompt' in self.main_prompt:
+                prompt = self.main_prompt.format(system_prompt=self.system_prompt)
 
             prompts.append(prompt)
 
@@ -90,8 +92,17 @@ class LayoutModel(nn.Module):
 
         return text
 def build_model(args):
+    if 'Llama' in args["model_name"]:
+        pad_size = 560
+        target_size = 500
+    elif 'Qwen' in args["model_name"]:
+        pad_size = 640
+        target_size = 580
+    else:
+        print("model name error")
+        exit()
     vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
-    vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
+    vp_model = ExpansiveVisualPrompt(pad_size=pad_size, target_size=target_size)
     return vlm_model, vp_model
 
 def build_test_model(args, model_path):
