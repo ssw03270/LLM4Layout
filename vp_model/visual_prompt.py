@@ -27,6 +27,7 @@ class ExpansiveVisualPrompt(nn.Module):
         self.register_buffer("mask", F.pad(mask, (self.l_pad, self.r_pad, self.l_pad, self.r_pad), value=1))
 
     def forward(self, x):
+        print(x.shape)
         b, t, d, c, h, w = x.shape
         x = x.view(b * t * d, c, h, w)  # Reshape to [new_batch, channel, height, width]
         x = F.interpolate(x, size=(self.target_size, self.target_size), mode='bilinear', align_corners=False)
