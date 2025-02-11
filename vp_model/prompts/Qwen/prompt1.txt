@@ -1,8 +1,3 @@
-<|im_start|>system
-{system_prompt}<|im_end|>
-
-<|im_start|>user
-<|vision_start|><|image_pad|><|vision_end|>
 {text_description}
 
 [1] First, describe the entire scene you observe in the image.
@@ -20,6 +15,4 @@ For each significant item in the scene, state what it is, where it is located, a
    - Are there any notable design considerations, such as color scheme, user flow, or accessibility?
 
 [4] From a designer or planner’s perspective, please provide a concise overview of how to improve the existing furniture arrangement.
-Include specific recommendations for optimizing furniture placement, enhancing traffic flow, and maximizing the space’s functionality.<|im_end|>
-
-<|im_start|>assistant
+Include specific recommendations for optimizing furniture placement, enhancing traffic flow, and maximizing the space’s functionality.

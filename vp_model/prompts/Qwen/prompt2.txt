@@ -1,8 +1,1 @@
-<|im_start|>system
-{system_prompt}<|im_end|>
-
-<|im_start|>user
-<|vision_start|><|image_pad|><|vision_end|>
-Describe the furniture in the image.<|im_end|>
-
-<|im_start|>assistant
+Describe the furniture in the image.

@@ -3,6 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from transformers import MllamaForConditionalGeneration, AutoProcessor, AutoConfig, Qwen2_5_VLForConditionalGeneration
+from qwen_vl_utils import process_vision_info
 
 from visual_prompt import ExpansiveVisualPrompt
 
@@ -23,10 +24,12 @@ class LayoutModel(nn.Module):
 
         if 'Llama' in model_name:
             with open(f"./prompts/Llama/{prompt_path}", "r", encoding="utf-8") as f:
-                self.main_prompt = f.read()
+                self.user_prompt = f.read()
         elif 'Qwen' in model_name:
             with open(f"./prompts/Qwen/{prompt_path}", "r", encoding="utf-8") as f:
-                self.main_prompt = f.read()
+                self.user_prompt = f.read()
+
+        self.model_name = model_name
 
     def forward(self, real_inputs, target_inputs):
         with torch.no_grad():
@@ -42,35 +45,80 @@ class LayoutModel(nn.Module):
 
         return loss
 
-    def get_inputs(self, images, text_descriptions, device):
-        prompts = []
+    def get_inputs(self, images, image_path, text_descriptions, device):
+        message_list = []
         for text_description in text_descriptions:
-            prompt = self.main_prompt
-            if 'text_description' in self.main_prompt:
-                prompt = self.main_prompt.format(text_description=text_description)
-            if 'system_prompt' in self.main_prompt:
-                prompt = self.main_prompt.format(system_prompt=self.system_prompt)
+            user_prompt = self.user_prompt
+            if 'text_description' in self.user_prompt:
+                user_prompt = self.user_prompt.format(text_description=text_description)
 
-            prompts.append(prompt)
+            if 'Llama' in self.model_name:
+                message = [
+                    {
+                        "role": "system",
+                        "content": self.system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image"},
+                            {"type": "text", "text": user_prompt}
+                        ]
+                    }
+                ]
+            elif 'Qwen' in self.model_name:
+                message = [
+                    {
+                        "role": "system",
+                        "content": self.system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image", "image": "file://" + image_path},
+                            {"type": "text", "text": user_prompt}
+                        ]
+                    }
+                ]
 
-        image_list = []
+            message_list.append(message)
 
-        for image in images:
-            image_list.append([image])
-
-        if len(prompts) != len(images):
+        if len(message_list) != len(images):
             print("not enough prompts")
             exit()
 
-        inputs = self.processor(
-            images=image_list,
-            text=prompts,
-            add_special_tokens=False,
-            padding=True,
-            return_tensors="pt"
-        ).to(device)
+        if 'Llama' in self.model_name:
+            image_list = []
+            for image in images:
+                image_list.append([image])
+            input_text = [
+                self.processor.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+                for message in message_list
+            ]
+            inputs = self.processor(
+                images=image_list,
+                text=input_text,
+                add_special_tokens=False,
+                padding=True,
+                return_tensors="pt"
+            ).to(device)
 
-        return inputs, prompts
+        elif 'Qwen' in self.model_name:
+            input_text = [
+                self.processor.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+                for message in message_list
+            ]
+            image_inputs, _ = process_vision_info(message_list)
+            inputs = self.processor(
+                images=image_inputs,
+                text=input_text,
+                add_special_tokens=False,
+                padding=True,
+                return_tensors="pt"
+            ).to(device)
+
+
+        return inputs, message_list
 
     def generate(self, inputs):
         prompt_len = inputs.input_ids.shape[-1]
@@ -82,15 +130,6 @@ class LayoutModel(nn.Module):
 
         return text
 def build_model(args):
-    if 'Llama' in args["model_name"]:
-        pad_size = 560
-        target_size = 500
-    elif 'Qwen' in args["model_name"]:
-        pad_size = 640
-        target_size = 580
-    else:
-        print("model name error")
-        exit()
     vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
     return vlm_model, vp_model
