@@ -45,7 +45,10 @@ class LayoutModel(nn.Module):
     def get_inputs(self, real_images, target_images, text_descriptions, device):
         prompts = []
         for text_description in text_descriptions:
-            prompt = self.main_prompt.format(text_description=text_description)
+            prompt = self.main_prompt
+            if 'text_description' in self.main_prompt:
+                prompt = self.main_prompt.format(text_description=text_description)
+
             prompts.append(prompt)
 
         real_image_list = []
