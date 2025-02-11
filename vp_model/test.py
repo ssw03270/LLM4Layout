@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
                 prompt = prompts[batch_idx]
 
-                save_dir = "./test_outputs"
+                save_dir = "outputs/test_outputs"
                 os.makedirs(save_dir, exist_ok=True)
                 real_image.save(os.path.join(save_dir, file_name + "_real_image.png"))
                 with open(os.path.join(save_dir, file_name + "_real_text.txt"), "w", encoding="utf-8") as file:

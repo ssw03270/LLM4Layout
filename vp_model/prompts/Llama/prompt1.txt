@@ -1,0 +1,26 @@
+<|begin_of_text|>
+
+<|start_header_id|>system<|end_header_id|>
+{system_prompt}<|eot_id|>
+
+<|start_header_id|>user<|end_header_id|>
+<|image|>{text_description}
+
+[1] First, describe the entire scene you observe in the image.
+Include details about the space, objects, furniture, and any other notable elements.
+
+[2] Next, explain your reasoning step by step.
+For each significant item in the scene, state what it is, where it is located, and how it relates to other objects.
+(Feel free to provide a chain-of-thought that outlines how you identify each object and interpret its position.)
+
+[3] Answer the following specific questions:
+   - What kind of room or space does this appear to be?
+   - How many distinct pieces of furniture can you see?
+   - Where are they positioned relative to each other?
+   - Does the arrangement suggest any particular use case or activity?
+   - Are there any notable design considerations, such as color scheme, user flow, or accessibility?
+
+[4] From a designer or planner’s perspective, please provide a concise overview of how to improve the existing furniture arrangement.
+Include specific recommendations for optimizing furniture placement, enhancing traffic flow, and maximizing the space’s functionality.<|eot_id|>
+
+<|start_header_id|>assistant<|end_header_id|>

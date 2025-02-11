@@ -8,8 +8,8 @@ os.environ["HF_TOKEN"] = api_key
 login(api_key)
 
 # 폴더 경로 설정
-folder_path = "./no_test_outputs"
-asdf_folder_path = "./test_outputs"
+folder_path = "outputs/no_test_outputs"
+asdf_folder_path = "outputs/test_outputs"
 
 # 파일 목록 가져오기
 file_list = os.listdir(folder_path)

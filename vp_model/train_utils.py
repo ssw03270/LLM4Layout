@@ -8,36 +8,23 @@ from accelerate.utils import DummyOptim, DummyScheduler
 from visual_prompt import ExpansiveVisualPrompt
 
 class LayoutModel(nn.Module):
-    def __init__(self, model_name):
+    def __init__(self, model_name, prompt_path):
         super(LayoutModel, self).__init__()
         self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-        # self.config = AutoConfig.from_pretrained(model_name)
-        # self.config.hidden_size = self.config.text_config.hidden_size
         for param in self.vlm.parameters():
             param.requires_grad = False
 
         self.processor = AutoProcessor.from_pretrained(model_name)
 
-        self.system_prompt = """You are an expert visual reasoning assistant. 
-You have the ability to observe an image and describe it in detail. 
-Then, you will answer questions about the image, step by step, to demonstrate thorough understanding and reasoning."""
+        with open("./prompts/system_prompt.txt", "r", encoding="utf-8") as f:
+            self.system_prompt = f.read()
 
-        self.user_prompt = """[1] First, describe the entire scene you observe in the image. 
-Include details about the space, objects, furniture, and any other notable elements.
-
-[2] Next, explain your reasoning step by step. 
-For each significant item in the scene, state what it is, where it is located, and how it relates to other objects. 
-(Feel free to provide a chain-of-thought that outlines how you identify each object and interpret its position.)
-
-[3] Answer the following specific questions:
-   - What kind of room or space does this appear to be?
-   - How many distinct pieces of furniture can you see?
-   - Where are they positioned relative to each other?
-   - Does the arrangement suggest any particular use case or activity?
-   - Are there any notable design considerations, such as color scheme, user flow, or accessibility?
-
-[4] From a designer or planner’s perspective, please provide a concise overview of how to improve the existing furniture arrangement. 
-Include specific recommendations for optimizing furniture placement, enhancing traffic flow, and maximizing the space’s functionality."""
+        if 'Llama' in model_name:
+            with open(f"./prompts/Llama/{prompt_path}", "r", encoding="utf-8") as f:
+                self.main_prompt = f.read()
+        elif 'Qwen' in model_name:
+            with open(f"./prompts/Qwen/{prompt_path}", "r", encoding="utf-8") as f:
+                self.main_prompt = f.read()
 
     def forward(self, real_inputs, target_inputs):
         with torch.no_grad():
@@ -56,28 +43,7 @@ Include specific recommendations for optimizing furniture placement, enhancing t
     def get_inputs(self, real_images, target_images, text_descriptions, device):
         prompts = []
         for text_description in text_descriptions:
-#             prompt = f"""<|begin_of_text|>
-#
-# <|start_header_id|>system<|end_header_id|>
-# {self.system_prompt}<|eot_id|>
-#
-# <|start_header_id|>user<|end_header_id|>
-# <|image|>{text_description}
-#
-# {self.user_prompt}<|eot_id|>
-#
-# <|start_header_id|>assistant<|end_header_id|>
-# """
-            prompt = f"""<|begin_of_text|>
-            
-<|start_header_id|>system<|end_header_id|>
-{self.system_prompt}<|eot_id|>
-
-<|start_header_id|>user<|end_header_id|>
-<|image|>Describe the furniture in the image.<|eot_id|>
-
-<|start_header_id|>assistant<|end_header_id|>
-"""
+            prompt = self.main_prompt.format(text_description=text_description)
             prompts.append(prompt)
 
         real_image_list = []
@@ -119,12 +85,12 @@ Include specific recommendations for optimizing furniture placement, enhancing t
 
         return text
 def build_model(args):
-    vlm_model = LayoutModel(args["model_name"])
+    vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
     return vlm_model, vp_model
 
 def build_test_model(args, model_path):
-    vlm_model = LayoutModel(args["model_name"])
+    vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
     vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
     vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
