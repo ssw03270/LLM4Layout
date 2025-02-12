@@ -104,6 +104,11 @@ class LayoutModel(nn.Module):
             ]
             from qwen_vl_utils import process_vision_info
             image_inputs, _ = process_vision_info(message_list)
+            for image_input in image_inputs:
+                try:
+                    print(image_input.shape)
+                except:
+                    print("no shape")
             inputs = self.processor(
                 images=image_inputs,
                 text=input_text,
