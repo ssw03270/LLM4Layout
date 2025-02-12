@@ -131,12 +131,18 @@ class LayoutModel(nn.Module):
         return text
 def build_model(args):
     vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
-    vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
+    if 'Llama' in args['model_name']:
+        vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500, model_name=args["model_name"])
+    elif 'Qwen' in args['model_name']:
+        vp_model = ExpansiveVisualPrompt(pad_size=252, target_size=222, model_name=args["model_name"])
     return vlm_model, vp_model
 
 def build_test_model(args, model_path):
     vlm_model = LayoutModel(args["model_name"], args["prompt_path"])
-    vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500)
+    if 'Llama' in args['model_name']:
+        vp_model = ExpansiveVisualPrompt(pad_size=560, target_size=500, model_name=args["model_name"])
+    elif 'Qwen' in args['model_name']:
+        vp_model = ExpansiveVisualPrompt(pad_size=252, target_size=222, model_name=args["model_name"])
     vp_model.load_state_dict(torch.load(model_path))
     return vlm_model, vp_model
 
