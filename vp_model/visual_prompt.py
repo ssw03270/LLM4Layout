@@ -113,6 +113,7 @@ class ExpansiveVisualPrompt(nn.Module):
             b, t, d, c, h, w = x.shape
             x = x.view(b * t * d, c, h, w)
         elif 'Qwen' in self.model_name:
+            x = x.view(-1, 1, 324, 3, 2, 14, 14)
             x = patch_to_image(x)
 
         x = F.interpolate(x, size=(self.target_size, self.target_size), mode='bilinear', align_corners=False)
@@ -126,4 +127,5 @@ class ExpansiveVisualPrompt(nn.Module):
             x = x.view(b, t, d, c, self.pad_size, self.pad_size)
         elif 'Qwen' in self.model_name:
             x = image_to_patch_qwen(x)
+            x = x.view(-1, 3, 2, 14, 14)
         return x
