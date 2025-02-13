@@ -11,7 +11,9 @@ class LayoutModel(nn.Module):
         super(LayoutModel, self).__init__()
         if 'Llama' in model_name:
             from transformers import MllamaForConditionalGeneration
+            # from transformers import MllamaVisionModel
             self.vlm = MllamaForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+            # self.vlm = MllamaVisionModel.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         elif 'Qwen' in model_name:
             from transformers import Qwen2_5_VLForConditionalGeneration
             self.vlm = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16)
@@ -33,6 +35,9 @@ class LayoutModel(nn.Module):
         self.model_name = model_name
 
     def forward(self, real_inputs, target_inputs):
+        for key in real_inputs:
+            print(key)
+        exit()
         with torch.no_grad():
             real_outputs = self.vlm(**real_inputs, output_attentions=False, output_hidden_states=False)
         target_outputs = self.vlm(**target_inputs, output_attentions=False, output_hidden_states=False)
