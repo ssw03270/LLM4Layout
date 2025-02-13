@@ -37,6 +37,7 @@ class LayoutModel(nn.Module):
     def forward(self, real_inputs, target_inputs):
         for key in real_inputs:
             print(key)
+        print(real_inputs['attention_mask'].shape)
         exit()
         with torch.no_grad():
             real_outputs = self.vlm(**real_inputs, output_attentions=False, output_hidden_states=False)
