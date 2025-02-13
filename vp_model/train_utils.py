@@ -53,8 +53,8 @@ class LayoutModel(nn.Module):
             user_prompt = self.user_prompt
             if 'text_description' in self.user_prompt:
                 user_prompt = self.user_prompt.format(text_description=text_description)
-                user_prompt_list.append(user_prompt)
 
+            user_prompt_list.append(user_prompt)
             if 'Llama' in self.model_name:
                 message = f"""
 <|begin_of_text|>
