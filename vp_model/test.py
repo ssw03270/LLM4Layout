@@ -52,11 +52,12 @@ if __name__ == "__main__":
             real_inputs, prompts = accelerator.unwrap_model(vlm_model).get_inputs(real_images, real_image_path, text_descriptions, device)
             target_inputs, _ = accelerator.unwrap_model(vlm_model).get_inputs(target_images, target_image_path, text_descriptions, device)
 
+            real_texts = vlm_model.generate(real_inputs)
+            target_texts = vlm_model.generate(target_inputs)
+
             vp_target_inputs = target_inputs
             vp_target_inputs["pixel_values"] = vp_model(vp_target_inputs["pixel_values"])
-            real_texts = vlm_model.generate(real_inputs)
             vp_target_texts = vlm_model.generate(vp_target_inputs)
-            target_texts = vlm_model.generate(target_inputs)
 
             for batch_idx in range(real_images.shape[0]):
                 file_name = f"{idx}_{batch_idx}_{device}"
