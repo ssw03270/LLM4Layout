@@ -48,10 +48,12 @@ class LayoutModel(nn.Module):
 
     def get_inputs(self, images, image_paths, text_descriptions, device):
         message_list = []
+        user_prompt_list = []
         for text_description, image_path in zip(text_descriptions, image_paths):
             user_prompt = self.user_prompt
             if 'text_description' in self.user_prompt:
                 user_prompt = self.user_prompt.format(text_description=text_description)
+                user_prompt_list.append(user_prompt)
 
             if 'Llama' in self.model_name:
                 message = f"""
@@ -113,7 +115,7 @@ class LayoutModel(nn.Module):
             ).to(device)
 
 
-        return inputs, message_list
+        return inputs, user_prompt_list
 
     def generate(self, inputs):
         prompt_len = inputs.input_ids.shape[-1]
