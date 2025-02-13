@@ -32,9 +32,6 @@ if __name__ == "__main__":
 
     test_dataloader = data_utils.get_dataloader(test_dataset, args, shuffle=False)
 
-    zero2_plugin = DeepSpeedPlugin(hf_ds_config="zero2_config.json")
-    zero3_plugin = DeepSpeedPlugin(hf_ds_config="zero3_config.json")
-
     accelerator = Accelerator()
 
     vlm_model, vp_model = train_utils.build_test_model(args, model_path=args["model_path"])
