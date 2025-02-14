@@ -97,14 +97,13 @@ def get_custom_dataset_from_json(tokenizer, data_files, split="train"):
     # JSONL 파일 불러오기
     dataset = load_dataset("json", data_files=data_files, split=split)
     # 데이터셋에 필요한 속성 추가 (llama_cookbook의 get_dataloader가 요구하는 속성)
-    dataset.dataset = "custom_dataset"
-    dataset.train_split = split
-    dataset.file = "getting-started/finetuning/datasets/custom_dataset.py"
     # 각 샘플의 "conversation" 필드를 tokenize_dialog 함수를 통해 전처리합니다.
     dataset = dataset.map(
         lambda x: tokenize_dialog(x["conversation"], tokenizer),
         remove_columns=list(dataset.features)
     )
+    dataset.dataset = "custom_dataset"
+    dataset.train_split = split
     return dataset
 
 # train과 validation 데이터셋 불러오기 (파일 경로 수정)
