@@ -110,7 +110,24 @@ def get_custom_dataset_from_json(tokenizer, data_files, split="train"):
 train_dataset = get_custom_dataset_from_json(tokenizer, "../dataset/train_messages.jsonl", split="train")
 val_dataset = get_custom_dataset_from_json(tokenizer, "../dataset/val_messages.jsonl", split="train")
 
-from llama_cookbook.utils.dataset_utils import get_dataloader
+
+from llama_cookbook.data.concatenator import ConcatDataset
+from llama_cookbook.utils.config_utils import get_dataloader_kwargs
+def get_dataloader(tokenizer, dataset, train_config, split: str = "train"):
+    dl_kwargs = get_dataloader_kwargs(train_config, dataset, tokenizer, split)
+
+    if split == "train" and train_config.batching_strategy == "packing":
+        dataset = ConcatDataset(dataset, chunk_size=train_config.context_length)
+
+    # Create data loader
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        num_workers=train_config.num_workers_dataloader,
+        pin_memory=True,
+        **dl_kwargs,
+    )
+    return dataloader
+
 train_dataloader = get_dataloader(tokenizer, train_dataset, train_config)
 eval_dataloader = get_dataloader(tokenizer, val_dataset, train_config, "val")
 
