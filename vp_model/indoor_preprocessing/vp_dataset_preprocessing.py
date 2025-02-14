@@ -372,16 +372,16 @@ def visualize_polygons(polygons, floor, class_label_texts, class_label_indices, 
 
     return fig
 
-dataset_folder = "E:\\Resources\\IndoorSceneSynthesis\\InstructScene"
+dataset_folder = "E:/Resources/IndoorSceneSynthesis/InstructScene"
 room_types = ["threed_front_bedroom"]
 
-rendered_image_file_name = "blender_rendered_scene_256\\topdown.png"
+rendered_image_file_name = "blender_rendered_scene_256/topdown.png"
 layout_npz_file_name = "boxes.npz"
 description_pkl_file_name = "descriptions.pkl"
 dataset_stats_file_name = "dataset_stats.txt"
 models_info_pkl_file_name = "models_info.pkl"
 
-output_folder = "outputs\\indoor_layouts"
+output_folder = "./outputs/indoor_layouts"
 real_output_path = "real_images"
 layout_output_path = "target_images"
 description_output_path = "text_description"
