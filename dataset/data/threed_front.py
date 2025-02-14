@@ -283,7 +283,8 @@ class CachedRoom(object):
         translations,
         sizes,
         angles,
-        image_path
+        image_path,
+        jids
     ):
         self.scene_id = scene_id
         self.room_layout = room_layout
@@ -295,6 +296,14 @@ class CachedRoom(object):
         self.sizes = sizes
         self.angles = angles
         self.image_path = image_path
+        self.jids = jids
+
+        self.captions = []
+        for jid in self.jids:
+            path = os.path.join('dataset/InstructScene/3D-FUTURE-chatgpt/', f"{jid}.txt")
+            with open(path, "r") as f:
+                caption = f.read()
+                self.captions.append(caption)
 
     @property
     def floor_plan(self):
@@ -388,7 +397,8 @@ class CachedThreedFront(ThreedFront):
             translations=D["translations"],
             sizes=D["sizes"],
             angles=D["angles"],
-            image_path=self._path_to_renders[i]
+            image_path=self._path_to_renders[i],
+            jids=D["jids"]
         )
 
     def get_room_params(self, i):

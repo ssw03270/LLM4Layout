@@ -1,97 +1,100 @@
-# LoRA
-"""
-python trl/scripts/sft.py \
-    --model_name_or_path meta-llama/Llama-3.2-3B-Instruct \
-    --dataset_name trl-lib/Capybara \
-    --learning_rate 2.0e-4 \
-    --num_train_epochs 1 \
-    --packing \
-    --per_device_train_batch_size 2 \
-    --gradient_accumulation_steps 8 \
-    --gradient_checkpointing \
-    --logging_steps 25 \
-    --eval_strategy steps \
-    --eval_steps 100 \
-    --use_peft \
-    --lora_r 32 \
-    --lora_alpha 16 \
-    --output_dir Qwen2-0.5B-SFT \
-    --push_to_hub
-"""
+import os
+from huggingface_hub import login
+with open("api_key.txt", "r") as f:
+    api_key = f.read().strip()  # 공백 제거
+os.environ["HF_TOKEN"] = api_key
+login(api_key)
 
-import argparse
+import torch
+from transformers import LlamaForCausalLM, AutoTokenizer
+from llama_cookbook.configs import train_config as TRAIN_CONFIG
 
-from datasets import load_dataset
-from transformers import AutoTokenizer
+train_config = TRAIN_CONFIG()
+train_config.model_name = "meta-llama/Llama-3.2-3B-Instruct"
+train_config.num_epochs = 1
+train_config.run_validation = False
+train_config.gradient_accumulation_steps = 4
+train_config.batch_size_training = 1
+train_config.lr = 3e-4
+train_config.use_fast_kernels = True
+train_config.use_fp16 = True
+train_config.context_length = 1024 if torch.cuda.get_device_properties(0).total_memory < 16e9 else 2048 # T4 16GB or A10 24GB
+train_config.batching_strategy = "packing"
+train_config.output_dir = "meta-llama-samsum"
+train_config.use_peft = True
 
-from trl import (
-    ModelConfig,
-    ScriptArguments,
-    SFTConfig,
-    SFTTrainer,
-    TrlParser,
-    get_kbit_device_map,
-    get_peft_config,
-    get_quantization_config,
+from transformers import BitsAndBytesConfig
+config = BitsAndBytesConfig(
+    load_in_8bit=True,
 )
 
+model = LlamaForCausalLM.from_pretrained(
+            train_config.model_name,
+            device_map="auto",
+            quantization_config=config,
+            use_cache=False,
+            attn_implementation="sdpa" if train_config.use_fast_kernels else None,
+            torch_dtype=torch.float16,
+        )
 
-def main(script_args, training_args, model_args):
-    ################
-    # Model init kwargs & Tokenizer
-    ################
-    quantization_config = get_quantization_config(model_args)
-    model_kwargs = dict(
-        revision=model_args.model_revision,
-        trust_remote_code=model_args.trust_remote_code,
-        attn_implementation=model_args.attn_implementation,
-        torch_dtype=model_args.torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True,
-        device_map=get_kbit_device_map() if quantization_config is not None else None,
-        quantization_config=quantization_config,
-    )
-    training_args.model_init_kwargs = model_kwargs
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path, trust_remote_code=model_args.trust_remote_code, use_fast=True
-    )
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+tokenizer = AutoTokenizer.from_pretrained(train_config.model_name)
+tokenizer.pad_token = tokenizer.eos_token
 
-    ################
-    # Dataset
-    ################
-    dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
+##############################
 
-    ################
-    # Training
-    ################
-    trainer = SFTTrainer(
-        model=model_args.model_name_or_path,
-        args=training_args,
-        train_dataset=dataset[script_args.dataset_train_split],
-        eval_dataset=dataset[script_args.dataset_test_split] if training_args.eval_strategy != "no" else None,
-        processing_class=tokenizer,
-        peft_config=get_peft_config(model_args),
-    )
+from llama_cookbook.configs.datasets import samsum_dataset
+from llama_cookbook.utils.dataset_utils import get_dataloader
 
-    trainer.train()
+samsum_dataset.trust_remote_code = True
 
-    # Save and push to hub
-    trainer.save_model(training_args.output_dir)
-    if training_args.push_to_hub:
-        trainer.push_to_hub(dataset_name=script_args.dataset_name)
+train_dataloader = get_dataloader(tokenizer, samsum_dataset, train_config)
+eval_dataloader = get_dataloader(tokenizer, samsum_dataset, train_config, "val")
 
+#############################
 
-def make_parser(subparsers: argparse._SubParsersAction = None):
-    dataclass_types = (ScriptArguments, SFTConfig, ModelConfig)
-    if subparsers is not None:
-        parser = subparsers.add_parser("sft", help="Run the SFT training script", dataclass_types=dataclass_types)
-    else:
-        parser = TrlParser(dataclass_types)
-    return parser
+from peft import get_peft_model, prepare_model_for_kbit_training, LoraConfig
+from dataclasses import asdict
+from llama_cookbook.configs import lora_config as LORA_CONFIG
 
+lora_config = LORA_CONFIG()
+lora_config.r = 8
+lora_config.lora_alpha = 32
+lora_dropout: float=0.01
 
-if __name__ == "__main__":
-    parser = make_parser()
-    script_args, training_args, model_args = parser.parse_args_and_config()
-    main(script_args, training_args, model_args)
+peft_config = LoraConfig(**asdict(lora_config))
+
+model = prepare_model_for_kbit_training(model)
+model = get_peft_model(model, peft_config)
+
+##############################
+
+import torch.optim as optim
+from llama_cookbook.utils.train_utils import train
+from torch.optim.lr_scheduler import StepLR
+
+model.train()
+
+optimizer = optim.AdamW(
+            model.parameters(),
+            lr=train_config.lr,
+            weight_decay=train_config.weight_decay,
+        )
+scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
+
+# Start the training process
+results = train(
+    model,
+    train_dataloader,
+    eval_dataloader,
+    tokenizer,
+    optimizer,
+    scheduler,
+    train_config.gradient_accumulation_steps,
+    train_config,
+    None,
+    None,
+    None,
+    wandb_run=None,
+)
+
+model.save_pretrained(train_config.output_dir)
