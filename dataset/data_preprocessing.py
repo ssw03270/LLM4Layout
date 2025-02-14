@@ -11,7 +11,9 @@ import json
 def save_messages(messages, output_file):
     with open(output_file, 'w', encoding='utf-8') as f:
         for msg in messages:
-            f.write(json.dumps(msg, ensure_ascii=False) + "\n")
+            # 각 메시지를 "conversation" 키로 래핑하여 JSON 객체로 저장
+            data = {"conversation": msg}
+            f.write(json.dumps(data, ensure_ascii=False) + "\n")
 
 def load_config(config_file):
     with open(config_file, "r") as f:
