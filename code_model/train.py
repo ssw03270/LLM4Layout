@@ -48,6 +48,9 @@ from llama_cookbook.utils.dataset_utils import get_dataloader
 train_dataset = load_dataset("json", data_files="../dataset/train_messages.jsonl")
 val_dataset = load_dataset("json", data_files="../dataset/val_messages.jsonl")
 
+train_dataset.dataset = "custom"
+val_dataset.dataset = "custom"
+
 train_dataloader = get_dataloader(tokenizer, train_dataset, train_config)
 eval_dataloader = get_dataloader(tokenizer, val_dataset, train_config, "val")
 
