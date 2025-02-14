@@ -6,6 +6,12 @@ except ImportError:
     from yaml import Loader
 
 from data import get_raw_dataset, filter_function
+import json
+
+def save_messages(messages, output_file):
+    with open(output_file, 'w', encoding='utf-8') as f:
+        for msg in messages:
+            f.write(json.dumps(msg, ensure_ascii=False) + "\n")
 
 def load_config(config_file):
     with open(config_file, "r") as f:
@@ -73,10 +79,10 @@ def generate_text(raw_data, room_type, task_type="remaining values"):
 
         _assistant_prompt = assistant_prompt.format(code=gt_layout_text)
 
-        message = {
+        message = [
             {"role": "user", "content": _user_prompt},
             {"role": "assistant", "content": _assistant_prompt}
-        }
+        ]
         messages.append(message)
 
     return messages
@@ -107,6 +113,9 @@ def main():
         split=config["validation"].get("splits", ["test"])
     )
     val_messages = generate_text(val_raw, room_type)
+
+    save_messages(train_messages, "train_messages.jsonl")
+    save_messages(val_messages, "val_messages.jsonl")
 
 if __name__ == "__main__":
     main()

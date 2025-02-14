@@ -42,13 +42,14 @@ tokenizer.pad_token = tokenizer.eos_token
 
 ##############################
 
-from llama_cookbook.configs.datasets import samsum_dataset
+from datasets import load_dataset
 from llama_cookbook.utils.dataset_utils import get_dataloader
 
-samsum_dataset.trust_remote_code = True
+train_dataset = load_dataset("json", data_files="../dataset/train_messages.jsonl")
+val_dataset = load_dataset("json", data_files="../dataset/val_messages.jsonl")
 
-train_dataloader = get_dataloader(tokenizer, samsum_dataset, train_config)
-eval_dataloader = get_dataloader(tokenizer, samsum_dataset, train_config, "val")
+train_dataloader = get_dataloader(tokenizer, train_dataset, train_config)
+eval_dataloader = get_dataloader(tokenizer, val_dataset, train_config, "val")
 
 #############################
 
