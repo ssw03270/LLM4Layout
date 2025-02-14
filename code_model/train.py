@@ -49,7 +49,9 @@ train_dataset = load_dataset("json", data_files="../dataset/train_messages.jsonl
 val_dataset = load_dataset("json", data_files="../dataset/val_messages.jsonl")
 
 train_dataset.dataset = "custom_dataset"
+train_dataset.train_split = "train"
 val_dataset.dataset = "custom_dataset"
+val_dataset.train_split = "val"
 
 train_dataloader = get_dataloader(tokenizer, train_dataset, train_config)
 eval_dataloader = get_dataloader(tokenizer, val_dataset, train_config, "val")
