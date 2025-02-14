@@ -1,3 +1,52 @@
+import copy
+import datasets
+import itertools
+
+B_INST, E_INST = "[INST]", "[/INST]"
+EOT_ID = 128009 #<|eot_id|>
+
+def mask_target(target,seq):
+    for i in range(len(seq)-len(target)):
+        if seq[i:i+len(target)] == target:
+            seq[i:i+len(target)] = [-100] * len(target)
+    return seq
+
+def tokenize_dialog(dialog, tokenizer):
+    if tokenizer.vocab_size >= 128000:
+        dialog_tokens = tokenizer.apply_chat_template(dialog)
+        eot_indices = [i for i,n in enumerate(dialog_tokens) if n == EOT_ID]
+        labels = copy.copy(dialog_tokens)
+        #determine token for system and user
+        system_or_user = (tokenizer.encode("system")[-1], tokenizer.encode("user")[-1])
+        labels[0] = -100 # bos token
+        last_idx = 1
+        for n, idx in enumerate(eot_indices):
+            role_token = labels[last_idx+1]
+            if role_token in system_or_user:
+                # Set labels to -100 for system and user tokens to ignore in loss function
+                labels[last_idx:idx+1] = [-100] * (idx-last_idx+1)
+            last_idx = idx + 1
+        mask_target(tokenizer.encode("<|start_header_id|>assistant<|end_header_id|>", add_special_tokens=False), labels)
+
+        dialog_tokens = [dialog_tokens]
+        labels_tokens = [labels]
+    else:
+        prompt_tokens = [tokenizer.encode(f"{tokenizer.bos_token}{B_INST} {(prompt['content']).strip()} {E_INST}", add_special_tokens=False) for prompt in dialog[::2]]
+        answer_tokens = [tokenizer.encode(f"{answer['content'].strip()} {tokenizer.eos_token}", add_special_tokens=False) for answer in dialog[1::2]]
+        dialog_tokens = list(itertools.chain.from_iterable(zip(prompt_tokens, answer_tokens)))
+
+        #Add labels, convert prompt token to -100 in order to ignore in loss function
+        labels_tokens = [len(c)*[-100,] if i % 2 == 0 else c for i,c in enumerate(dialog_tokens)]
+
+    combined_tokens = {
+        "input_ids": list(itertools.chain(*(t for t in dialog_tokens))),
+        "labels": list(itertools.chain(*(t for t in labels_tokens))),
+    }
+
+    return dict(combined_tokens, attention_mask=[1]*len(combined_tokens["input_ids"]))
+
+########################
+
 import os
 from huggingface_hub import login
 with open("api_key.txt", "r") as f:
@@ -43,19 +92,26 @@ tokenizer.pad_token = tokenizer.eos_token
 ##############################
 
 from datasets import load_dataset
+
+def get_custom_dataset_from_json(tokenizer, data_files, split="train"):
+    # JSONL 파일 불러오기
+    dataset = load_dataset("json", data_files=data_files, split=split)
+    # 데이터셋에 필요한 속성 추가 (llama_cookbook의 get_dataloader가 요구하는 속성)
+    dataset.dataset = "custom_dataset"
+    dataset.train_split = split
+    dataset.file = "getting-started/finetuning/datasets/custom_dataset.py"
+    # 각 샘플의 "conversation" 필드를 tokenize_dialog 함수를 통해 전처리합니다.
+    dataset = dataset.map(
+        lambda x: tokenize_dialog(x["conversation"], tokenizer),
+        remove_columns=list(dataset.features)
+    )
+    return dataset
+
+# train과 validation 데이터셋 불러오기 (파일 경로 수정)
+train_dataset = get_custom_dataset_from_json(tokenizer, "../dataset/train_messages.jsonl", split="train")
+val_dataset = get_custom_dataset_from_json(tokenizer, "../dataset/val_messages.jsonl", split="train")
+
 from llama_cookbook.utils.dataset_utils import get_dataloader
-
-train_dataset = load_dataset("json", data_files="../dataset/train_messages.jsonl")
-val_dataset = load_dataset("json", data_files="../dataset/val_messages.jsonl")
-
-train_dataset.dataset = "custom_dataset"
-train_dataset.train_split = "train"
-train_dataset.file = "getting-started/finetuning/datasets/custom_dataset.py"
-
-val_dataset.dataset = "custom_dataset"
-val_dataset.train_split = "val"
-val_dataset.file = "getting-started/finetuning/datasets/custom_dataset.py"
-
 train_dataloader = get_dataloader(tokenizer, train_dataset, train_config)
 eval_dataloader = get_dataloader(tokenizer, val_dataset, train_config, "val")
 
