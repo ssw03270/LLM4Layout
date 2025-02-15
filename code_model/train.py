@@ -60,7 +60,7 @@ from llama_cookbook.configs import train_config as TRAIN_CONFIG
 
 train_config = TRAIN_CONFIG()
 train_config.model_name = "Qwen/CodeQwen1.5-7B-Chat"
-train_config.num_epochs = 1
+train_config.num_epochs = 10
 train_config.run_validation = False
 train_config.gradient_accumulation_steps = 4
 train_config.batch_size_training = 1
