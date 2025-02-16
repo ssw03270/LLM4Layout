@@ -1,3 +1,10 @@
+import os
+from huggingface_hub import login
+with open("api_key.txt", "r") as f:
+    api_key = f.read().strip()  # 공백 제거
+os.environ["HF_TOKEN"] = api_key
+login(api_key)
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 
