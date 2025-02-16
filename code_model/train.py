@@ -11,41 +11,39 @@ def mask_target(target,seq):
             seq[i:i+len(target)] = [-100] * len(target)
     return seq
 
+
 def tokenize_dialog(dialog, tokenizer):
-    if tokenizer.vocab_size >= 128000:
-        print("tokenizer.vocab_size >= 128000")
-        dialog_tokens = tokenizer.apply_chat_template(dialog)
-        eot_indices = [i for i,n in enumerate(dialog_tokens) if n == EOT_ID]
-        labels = copy.copy(dialog_tokens)
-        #determine token for system and user
-        system_or_user = (tokenizer.encode("system")[-1], tokenizer.encode("user")[-1])
-        labels[0] = -100 # bos token
-        last_idx = 1
-        for n, idx in enumerate(eot_indices):
-            role_token = labels[last_idx+1]
-            if role_token in system_or_user:
-                # Set labels to -100 for system and user tokens to ignore in loss function
-                labels[last_idx:idx+1] = [-100] * (idx-last_idx+1)
-            last_idx = idx + 1
-        mask_target(tokenizer.encode("<|start_header_id|>assistant<|end_header_id|>", add_special_tokens=False), labels)
+    """
+    Qwen의 포맷에 맞춰 대화(dialog)를 토큰화합니다.
+    각 메시지는 "<|im_start|>{role}\n{content}<|im_end|>\n" 형식으로 변환되고,
+    어시스턴트 메시지에 대해서만 labels를 실제 토큰으로, 나머지는 -100으로 설정합니다.
+    마지막에 어시스턴트의 생성 프롬프트("<|im_start|>assistant\n")를 추가합니다.
+    """
+    input_ids = []
+    labels = []
 
-        dialog_tokens = [dialog_tokens]
-        labels_tokens = [labels]
-    else:
-        print("asdfasdfasdfasdf")
-        prompt_tokens = [tokenizer.encode(f"{tokenizer.bos_token}{B_INST} {(prompt['content']).strip()} {E_INST}", add_special_tokens=False) for prompt in dialog[::2]]
-        answer_tokens = [tokenizer.encode(f"{answer['content'].strip()} {tokenizer.eos_token}", add_special_tokens=False) for answer in dialog[1::2]]
-        dialog_tokens = list(itertools.chain.from_iterable(zip(prompt_tokens, answer_tokens)))
+    for message in dialog:
+        # 메시지 포맷: <|im_start|>{role}\n{content}<|im_end|>\n
+        formatted = f"<|im_start|>{message['role']}\n{message['content']}<|im_end|>\n"
+        message_ids = tokenizer.encode(formatted, add_special_tokens=False)
+        input_ids.extend(message_ids)
+        # 어시스턴트 메시지에 대해서만 실제 토큰 사용, 나머지는 -100 (loss 계산에서 무시)
+        if message["role"] == "assistant":
+            labels.extend(message_ids)
+        else:
+            labels.extend([-100] * len(message_ids))
 
-        #Add labels, convert prompt token to -100 in order to ignore in loss function
-        labels_tokens = [len(c)*[-100,] if i % 2 == 0 else c for i,c in enumerate(dialog_tokens)]
+    # 생성 프롬프트: 어시스턴트의 응답을 생성할 부분 (loss 계산 제외)
+    gen_prompt = "<|im_start|>assistant\n"
+    prompt_ids = tokenizer.encode(gen_prompt, add_special_tokens=False)
+    input_ids.extend(prompt_ids)
+    labels.extend([-100] * len(prompt_ids))
 
-    combined_tokens = {
-        "input_ids": list(itertools.chain(*(t for t in dialog_tokens))),
-        "labels": list(itertools.chain(*(t for t in labels_tokens))),
+    return {
+        "input_ids": input_ids,
+        "labels": labels,
+        "attention_mask": [1] * len(input_ids)
     }
-
-    return dict(combined_tokens, attention_mask=[1]*len(combined_tokens["input_ids"]))
 
 ########################
 
