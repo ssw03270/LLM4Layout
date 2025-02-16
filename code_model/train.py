@@ -13,6 +13,7 @@ def mask_target(target,seq):
 
 def tokenize_dialog(dialog, tokenizer):
     if tokenizer.vocab_size >= 128000:
+        print("tokenizer.vocab_size >= 128000")
         dialog_tokens = tokenizer.apply_chat_template(dialog)
         eot_indices = [i for i,n in enumerate(dialog_tokens) if n == EOT_ID]
         labels = copy.copy(dialog_tokens)
@@ -31,6 +32,7 @@ def tokenize_dialog(dialog, tokenizer):
         dialog_tokens = [dialog_tokens]
         labels_tokens = [labels]
     else:
+        print("asdfasdfasdfasdf")
         prompt_tokens = [tokenizer.encode(f"{tokenizer.bos_token}{B_INST} {(prompt['content']).strip()} {E_INST}", add_special_tokens=False) for prompt in dialog[::2]]
         answer_tokens = [tokenizer.encode(f"{answer['content'].strip()} {tokenizer.eos_token}", add_special_tokens=False) for answer in dialog[1::2]]
         dialog_tokens = list(itertools.chain.from_iterable(zip(prompt_tokens, answer_tokens)))
@@ -81,7 +83,6 @@ model = LlamaForCausalLM.from_pretrained(
             train_config.model_name,
             device_map="auto",
             quantization_config=config,
-            use_cache=False,
             attn_implementation="sdpa" if train_config.use_fast_kernels else None,
             torch_dtype=torch.float16,
         )
