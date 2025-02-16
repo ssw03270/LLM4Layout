@@ -15,7 +15,20 @@ model = PeftModel.from_pretrained(model, adapter_path)
 
 # 테스트를 위한 메시지 구성 (채팅 템플릿 사용)
 prompt = """
-I want to generate layout in bedroom style. Please generate the layout according to the remaining values I provide:\n```\n<html>\n    <body>\n        <rect data-category=wardrobe caption=\"a wooden wardrobe with a curtain\" transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)\"/>\n        <rect data-category=double_bed caption=\"a brown and black double bed with a comforter\" transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)\"/>\n        <rect data-category=table caption=\"a black corner side table with tray\" transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)\"/>\n        <rect data-category=cabinet caption=\"a gray metal cabinet with a metal base\" transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)\"/>\n        <rect data-category=nightstand caption=\"a nightstand with two drawers\" transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)\"/>\n        <rect data-category=ceiling_lamp caption=\"a silver circular ceiling lamp\" transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)\"/>\n    </body>\n</html>\n```
+I want to generate layout in bedroom style. Please generate the layout according to the remaining values I provide:
+```
+<html>
+    <body>
+        <rect data-category=dressing_table caption="a wooden dressing table with a drawer and a mirror" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+        <rect data-category=nightstand caption="a nightstand with three drawers" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+        <rect data-category=stool caption="a beige cushioned stool with gold trim" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+        <rect data-category=double_bed caption="a grey double bed with headboard and pillows" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+        <rect data-category=cabinet caption="a console table with doors and drawers" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+        <rect data-category=pendant_lamp caption="a pendant lamp with metal cups" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+        <rect data-category=wardrobe caption="a wardrobe with clothes" transform="translate3d(<FILL_x>, <FILL_y>, <FILL_z>) scale3d(<FILL_x>, <FILL_y>, <FILL_z>) rotateY(<FILL_deg>)"/>
+    </body>
+</html>
+```
 """
 messages = [
     {"role": "user", "content": prompt}
