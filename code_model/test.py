@@ -18,7 +18,7 @@ tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(base_model, trust_remote_code=True)
 
 # adapter 로드: 베이스 모델 위에 학습된 adapter를 적용합니다.
-model = PeftModel.from_pretrained(model, adapter_path)
+model = PeftModel.from_pretrained(model, adapter_path).to("cuda")
 
 # 테스트를 위한 메시지 구성 (채팅 템플릿 사용)
 prompt = """
@@ -46,7 +46,7 @@ prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_
 
 # 프롬프트 토큰화 후 모델 추론 (GPU 사용 가정)
 inputs = tokenizer(prompt, return_tensors='pt', padding=True, truncation=True).to("cuda")
-outputs = model.generate(**inputs, max_new_tokens=150, num_return_sequences=1)
+outputs = model.generate(**inputs, max_new_tokens=1024, num_return_sequences=1)
 
 # 생성된 텍스트 디코딩 및 어시스턴트 응답 추출
 text = tokenizer.decode(outputs[0], skip_special_tokens=True)
