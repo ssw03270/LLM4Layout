@@ -70,10 +70,10 @@ from llama_cookbook.configs import train_config as TRAIN_CONFIG
 
 train_config = TRAIN_CONFIG()
 train_config.model_name = "Qwen/Qwen2.5-Coder-7B-Instruct"
-train_config.num_epochs = 10
+train_config.num_epochs = 40
 train_config.run_validation = True
 train_config.gradient_accumulation_steps = 1
-train_config.batch_size_training = 2
+train_config.batch_size_training = 8
 train_config.lr = 3e-4
 train_config.use_fast_kernels = True
 train_config.use_fp16 = True
