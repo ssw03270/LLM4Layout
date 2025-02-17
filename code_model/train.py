@@ -182,7 +182,7 @@ results = train(
     None,
     None,
     None,
-    wandb_run=True,
+    wandb_run=run,
 )
 
 model.save_pretrained(train_config.output_dir)
