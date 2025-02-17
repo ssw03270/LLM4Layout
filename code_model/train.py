@@ -54,6 +54,14 @@ with open("api_key.txt", "r") as f:
 os.environ["HF_TOKEN"] = api_key
 login(api_key)
 
+import wandb
+wandb.login(key='0f272b4978c0b450c3765b24b8abd024d7799e80')
+run = wandb.init(
+    project='Fine-tune Llama 3.2 on Customer Support Dataset',
+    job_type="training",
+    anonymous="allow"
+)
+
 import torch
 from transformers import LlamaForCausalLM, AutoTokenizer
 from llama_cookbook.configs import train_config as TRAIN_CONFIG
@@ -174,7 +182,8 @@ results = train(
     None,
     None,
     None,
-    wandb_run=None,
+    wandb_run=True,
 )
 
 model.save_pretrained(train_config.output_dir)
+wandb.finish()
