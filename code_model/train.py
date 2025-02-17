@@ -57,7 +57,7 @@ login(api_key)
 import wandb
 wandb.login(key='0f272b4978c0b450c3765b24b8abd024d7799e80')
 run = wandb.init(
-    project='Fine-tune Llama 3.2 on Customer Support Dataset',
+    project='Fine-tune Code Layout',
     job_type="training",
     anonymous="allow"
 )
