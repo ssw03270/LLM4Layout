@@ -185,3 +185,6 @@ results
 InstructScene
 3D-FRONT
 blender-3.3.1-linux-x64
+train
+test
+topview_instruction

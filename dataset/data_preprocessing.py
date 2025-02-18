@@ -8,6 +8,7 @@ from shapely.affinity import translate
 
 from math import cos, sin
 
+import pickle
 import numpy as np
 import yaml
 try:
@@ -217,11 +218,8 @@ def visualize_polygons(polygons, floor, class_label_texts, class_label_indices, 
     return fig
 
 def save_messages(messages, output_file):
-    with open(output_file, 'w', encoding='utf-8') as f:
-        for msg in messages:
-            # 각 메시지를 "conversation" 키로 래핑하여 JSON 객체로 저장
-            data = {"conversation": msg}
-            f.write(json.dumps(data, ensure_ascii=False) + "\n")
+    with open(output_file, "w", encoding="utf-8") as json_file:
+        json.dump(messages, json_file, ensure_ascii=False, indent=4)
 
 def load_config(config_file):
     with open(config_file, "r") as f:
@@ -235,14 +233,14 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
     message_path = "message.jsonl"
 
     user_prompt = "I want to generate layout in {Domain} style. Please generate the layout according to the {Task_Condition} I provide:"
-    code_template = """```
+    code_template = """```html
 <html>
     <body>
 {code}
     </body>
 </html>
 ```"""
-    assistant_prompt = """```
+    assistant_prompt = """```html
 <html>
     <body>
 {code}
@@ -250,6 +248,8 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
 </html>
 ```"""
     messages = []
+
+    models_info_paths = raw_data._path_to_models_info
 
     text_class_labels = raw_data._class_labels
     min_bounds, max_bounds = raw_data._sizes
@@ -271,6 +271,11 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
         sizes = data.sizes
         angles = data.angles
         captions = data.captions
+
+        ###### model infos
+        models_info_path = models_info_paths[data_idx]
+        with open(models_info_path, "rb") as f:
+            data_models_info = pickle.load(f)
 
         ###### rendered figure generation
         rendered_image_file_path = os.path.join(data_path, "topdown.png")
@@ -310,11 +315,19 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
             angle = np.rad2deg(angles[element_idx][0])
             caption = captions[element_idx]
 
-            gt_element_text = (f"<rect data-category=\"{text_class_label}\" caption=\"{caption}\" "
+            data_model_info = data_models_info[element_idx]
+            objfeat_vq_indices = data_model_info["objfeat_vq_indices"]
+            text_objfeat = ""
+            for vq_index in objfeat_vq_indices:
+                text_objfeat += f"[img:{vq_index}]"
+
+            gt_element_text = (f"<rect data-category=\"{text_class_label}\" "
+                               f"data-image={text_objfeat} "
                                f"transform=\"translate3d({trans[0]:.2f}, {trans[1]:.2f}, {trans[2]:.2f}) "
                                f"scale3d({size[0]:.2f}, {size[1]:.2f}, {size[2]:.2f}) "
                                f"rotateY({angle:.2f})\"/>")
-            masked_element_text = (f"<rect data-category={text_class_label} caption=\"{caption}\" "
+            masked_element_text = (f"<rect data-category={text_class_label} "
+                                   f"data-image=[img:FILL_idx][img:FILL_idx][img:FILL_idx][img:FILL_idx] "
                                    f"transform=\"translate3d(<FILL_x>, <FILL_y>, <FILL_z>) "
                                    f"scale3d(<FILL_x>, <FILL_y>, <FILL_z>) "
                                    f"rotateY(<FILL_deg>)\"/>")
@@ -332,10 +345,7 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
 
         _assistant_prompt = assistant_prompt.format(code=gt_layout_text)
 
-        message = [
-            {"role": "user", "content": _user_prompt},
-            {"role": "assistant", "content": _assistant_prompt}
-        ]
+        message = {"instruction": _user_prompt, "input": "", "output": _assistant_prompt}
         messages.append(message)
 
         with open(os.path.join(base_save_path, message_path), 'w', encoding='utf-8') as f:
@@ -371,8 +381,8 @@ def main():
         )
         val_messages = generate_dataset(val_raw, room_type, output_path="./dataset", split="test")
 
-        save_messages(train_messages, "train_messages.jsonl")
-        save_messages(val_messages, "val_messages.jsonl")
+        save_messages(train_messages, f"{room_type}_train_dataset.json")
+        save_messages(val_messages, f"{room_type}_val_dataset.json")
 
 if __name__ == "__main__":
     main()
