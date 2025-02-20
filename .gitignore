@@ -188,3 +188,5 @@ blender-3.3.1-linux-x64
 train
 test
 topview_instruction
+
+*.pth
