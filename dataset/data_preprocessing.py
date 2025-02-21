@@ -232,7 +232,9 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
     instruction_path = "instruction.txt"
     message_path = "message.jsonl"
 
-    user_prompt = "I want to generate layout in {Domain} style. Please generate the layout according to the {Task_Condition} I provide:"
+    user_prompt = ("I want to generate layout in {Domain} style. "
+                   "Please generate the layout according to the following text condition."
+                   "\"{TextInstruction}\". ")
     code_template = """```html
 <html>
     <body>
@@ -339,13 +341,13 @@ def generate_dataset(raw_data, room_type, task_type="remaining values", output_p
                 gt_layout_text += "\n"
                 masked_layout_text += "\n"
 
-        _user_prompt = user_prompt.format(Domain=room_type, Task_Condition=task_type)
+        _user_prompt = user_prompt.format(Domain=room_type, TextInstruction=text_instruction)
         _code_template = code_template.format(code=masked_layout_text)
         _user_prompt += "\n" + _code_template
 
         _assistant_prompt = assistant_prompt.format(code=gt_layout_text)
 
-        message = {"instruction": _user_prompt, "input": "", "output": _assistant_prompt}
+        message = {"instruction": _user_prompt, "input": "", "output": _assistant_prompt, "tag": tag}
         messages.append(message)
 
         with open(os.path.join(base_save_path, message_path), 'w', encoding='utf-8') as f:

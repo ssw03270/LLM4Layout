@@ -219,7 +219,7 @@ def replace_function(data, descriptions_data, models_info_data, obj_classes, cur
         subfolder_count = len(subfolders)
         retrieved_subfolder_idx = np.random.randint(0, subfolder_count)
         retrieved_subfolder = subfolders[retrieved_subfolder_idx]
-        if current_subfolder == retrieved_subfolder:
+        if current_subfolder == retrieved_subfolder or "rendered_scene_256" in retrieved_subfolder:
             continue
 
         retrieved_data = np.load(os.path.join(root_path, retrieved_subfolder, "boxes.npz"))
@@ -230,6 +230,9 @@ def replace_function(data, descriptions_data, models_info_data, obj_classes, cur
             if np.argmax(current_obj_class) == np.argmax(retrieved_data["class_labels"][retrieved_obj_idx]):
                 target_data["sizes"][random_obj_idx] = retrieved_data["sizes"][retrieved_obj_idx]
                 target_data["translations"][random_obj_idx][1] = retrieved_data["translations"][retrieved_obj_idx][1]
+                target_data["uids"][random_obj_idx] = retrieved_data["uids"][retrieved_obj_idx]
+                target_data["jids"][random_obj_idx] = retrieved_data["jids"][retrieved_obj_idx]
+
 
                 polygons = create_polygons(target_data["translations"], target_data["sizes"], target_data["angles"], target_data["class_labels"], obj_classes)
                 collision = check_collision(polygons)
@@ -247,7 +250,7 @@ def replace_function(data, descriptions_data, models_info_data, obj_classes, cur
 
 
 room_types = ["threed_front_bedroom"]
-base_folder = "../../InstructScene"
+base_folder = "../../InstructScene/dataset/InstructScene"
 
 for room_type in room_types:
     root_path = os.path.join(base_folder, room_type)
@@ -258,6 +261,9 @@ for room_type in room_types:
     subfolders = [f for f in os.listdir(root_path) if os.path.isdir(os.path.join(root_path, f))]
 
     for subfolder in tqdm(subfolders):
+        if "rendered_scene_256" in subfolder:
+            continue
+
         boxes_data = np.load(os.path.join(root_path, subfolder, "boxes.npz"))
         boxes_data = {key: boxes_data[key] for key in boxes_data.files}
 
