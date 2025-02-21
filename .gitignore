@@ -190,3 +190,6 @@ test
 topview_instruction
 
 *.pth
+output
+diffuscene_3d_front_processed
+*.pt
