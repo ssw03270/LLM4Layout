@@ -1,0 +1,11 @@
+transformers==4.30.2
+torch==2.0.1
+sentencepiece==0.1.99
+numpy==1.24.0
+pandas==2.0.3
+scipy==1.10.1
+opencv-python==4.7.0.72
+tqdm==4.65.0
+# 필요하다면 trimesh, open3d 등 3D 라이브러리 추가
+trimesh==3.17.1
+open3d==0.17.0

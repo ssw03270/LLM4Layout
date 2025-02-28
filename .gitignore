@@ -175,3 +175,6 @@ datasets
 checkpoint
 *.bin
 *.pkl
+
+SceneEditing/data/
+models/
